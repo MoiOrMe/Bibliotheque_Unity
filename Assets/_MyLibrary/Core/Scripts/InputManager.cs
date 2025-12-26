@@ -23,6 +23,8 @@ namespace MyLibrary.Core
 
         public event Action OnInteractEvent;
 
+        public event Action OnPauseEvent;
+
         // --- INITIALISATION ---
         protected override void Awake()
         {
@@ -56,9 +58,9 @@ namespace MyLibrary.Core
             _controls.Gameplay.Sprint.performed += ctx => IsSprintPressed = true;
             _controls.Gameplay.Sprint.canceled += ctx => IsSprintPressed = false;
 
-            // Au lieu de stocker true/false, on déclenche l'événement "OnInteractEvent"
-            // seulement au moment précis de l'appui
+            // Au lieu de stocker true/false, on déclenche l'événement "OnInteractEvent" seulement au moment précis de l'appui
             _controls.Gameplay.Interact.performed += ctx => OnInteractEvent?.Invoke();
+            _controls.Gameplay.Pause.performed += ctx => OnPauseEvent?.Invoke();
         }
 
         /// <summary>
