@@ -17,11 +17,5 @@ public class TestInput : MonoBehaviour
         {
             Debug.Log("Le bouton SAUT est appuyé !");
         }
-
-        // 3. Test de lecture de l'Interaction (E / Bouton Ouest)
-        if (InputManager.Instance.IsInteractPressed)
-        {
-            Debug.Log("Le bouton INTERACTION est appuyé !");
-        }
     }
 }

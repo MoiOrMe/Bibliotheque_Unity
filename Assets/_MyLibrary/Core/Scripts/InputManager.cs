@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System;
 
 namespace MyLibrary.Core
 {
@@ -18,7 +19,7 @@ namespace MyLibrary.Core
         public Vector2 LookInput { get; private set; }
 
         public bool IsJumpPressed { get; private set; }
-        public bool IsInteractPressed { get; private set; }
+        public event Action OnInteractEvent;
 
         // --- INITIALISATION ---
         protected override void Awake()
@@ -51,8 +52,9 @@ namespace MyLibrary.Core
             _controls.Gameplay.Jump.performed += ctx => IsJumpPressed = true;
             _controls.Gameplay.Jump.canceled += ctx => IsJumpPressed = false;
 
-            _controls.Gameplay.Interact.performed += ctx => IsInteractPressed = true;
-            _controls.Gameplay.Interact.canceled += ctx => IsInteractPressed = false;
+            // Au lieu de stocker true/false, on déclenche l'événement "OnInteractEvent"
+            // seulement au moment précis de l'appui
+            _controls.Gameplay.Interact.performed += ctx => OnInteractEvent?.Invoke();
         }
 
         /// <summary>
