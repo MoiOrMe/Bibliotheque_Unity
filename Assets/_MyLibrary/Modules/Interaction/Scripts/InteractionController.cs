@@ -31,7 +31,7 @@ namespace MyLibrary.Modules.Interaction
 
         private void OnDestroy()
         {
-            // Toujours se désabonner quand l'objet est détruit pour éviter les erreurs
+            // On vérifie d'abord si l'Instance existe encore
             if (InputManager.Instance != null)
             {
                 InputManager.Instance.OnInteractEvent -= TryInteract;

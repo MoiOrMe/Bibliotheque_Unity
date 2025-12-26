@@ -19,6 +19,8 @@ namespace MyLibrary.Core
         public Vector2 LookInput { get; private set; }
 
         public bool IsJumpPressed { get; private set; }
+        public bool IsSprintPressed { get; private set; }
+
         public event Action OnInteractEvent;
 
         // --- INITIALISATION ---
@@ -41,16 +43,18 @@ namespace MyLibrary.Core
             // S'ABONNER AUX ÉVÉNEMENTS
             // Quand l'action "Move" change, on met à jour notre variable MoveInput
             _controls.Gameplay.Move.performed += ctx => MoveInput = ctx.ReadValue<Vector2>();
-            _controls.Gameplay.Move.canceled += ctx => MoveInput = Vector2.zero; // Quand on relâche, on remet à zéro
+            _controls.Gameplay.Move.canceled += ctx => MoveInput = Vector2.zero;
 
-            // Idem pour le regard (Souris / Stick Droit)
+            // Idem pour le regard
             _controls.Gameplay.Look.performed += ctx => LookInput = ctx.ReadValue<Vector2>();
             _controls.Gameplay.Look.canceled += ctx => LookInput = Vector2.zero;
 
-            // Pour les boutons (Saut, Interaction), on stocke juste l'état
-            // Note : Pour un saut plus précis, on utilisera des "Events" plus tard, mais pour l'instant stockons l'état.
+            // Pour les boutons (Saut, Sprint), on stocke juste l'état
             _controls.Gameplay.Jump.performed += ctx => IsJumpPressed = true;
             _controls.Gameplay.Jump.canceled += ctx => IsJumpPressed = false;
+
+            _controls.Gameplay.Sprint.performed += ctx => IsSprintPressed = true;
+            _controls.Gameplay.Sprint.canceled += ctx => IsSprintPressed = false;
 
             // Au lieu de stocker true/false, on déclenche l'événement "OnInteractEvent"
             // seulement au moment précis de l'appui
