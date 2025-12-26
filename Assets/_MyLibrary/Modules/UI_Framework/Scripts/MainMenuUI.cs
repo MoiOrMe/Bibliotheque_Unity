@@ -5,13 +5,20 @@ namespace MyLibrary.Modules.UI
 {
     public class MainMenuUI : MonoBehaviour
     {
-        // Noms exacts des scènes (doivent correspondre aux fichiers dans Build Settings)
+        #region Configuration
+
         [Header("Noms des Scènes")]
+        // Les noms doivent correspondre exactement à ceux dans File > Build Settings
         public string sceneFPS = "Demo_FPS";
         public string sceneTPSExplo = "Demo_TPS_Explo";
         public string sceneTPSCombat = "Demo_TPS_Combat";
         public string sceneSideView = "Demo_SideView";
 
+        #endregion
+
+        #region Button Events
+
+        // Méthodes reliées aux boutons via l'inspecteur Unity
         public void OnClick_FPS()
         {
             SceneLoader.Instance.LoadScene(sceneFPS);
@@ -36,5 +43,7 @@ namespace MyLibrary.Modules.UI
         {
             SceneLoader.Instance.QuitGame();
         }
+
+        #endregion
     }
 }

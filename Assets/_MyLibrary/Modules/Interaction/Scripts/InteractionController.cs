@@ -3,26 +3,36 @@ using MyLibrary.Core;
 
 namespace MyLibrary.Modules.Interaction
 {
+    /// <summary>
+    /// Contrôleur d'interaction flexible pour FPS et TPS.
+    /// Détecte les objets interactifs via Raycast (Caméra) ou Cône (Joueur).
+    /// </summary>
     public class InteractionController : MonoBehaviour
     {
         public enum DetectionMode
         {
-            CameraRay,   // Pour FPS (Vise le centre de l'écran)
-            PlayerCone   // Pour TPS/SideView (Vise devant le personnage)
+            CameraRay,   // Détection précise au centre de l'écran (FPS)
+            PlayerCone   // Détection large devant le personnage (TPS/SideView)
         }
 
-        [Header("Configuration")]
+        #region Settings
+
+        [Header("General Configuration")]
         public DetectionMode detectionMode = DetectionMode.CameraRay;
         public float interactionDistance = 3.0f;
         public LayerMask interactableLayer;
 
-        [Header("Settings Cone (TPS Only)")]
-        [Tooltip("L'angle de vision devant le joueur (ex: 90 degrés)")]
+        [Header("Cone Settings (TPS Only)")]
+        [Tooltip("Angle d'ouverture du cône de détection.")]
         public float fieldOfView = 90f;
+
+        #endregion
+
+        #region Unity Lifecycle
 
         private void Start()
         {
-            // On s'abonne à l'événement de l'InputManager
+            // Abonnement à l'action d'interaction définie dans l'Input System
             if (InputManager.Instance != null)
             {
                 InputManager.Instance.OnInteractEvent += TryInteract;
@@ -31,37 +41,60 @@ namespace MyLibrary.Modules.Interaction
 
         private void OnDestroy()
         {
-            // On vérifie d'abord si l'Instance existe encore
+            // Désabonnement lors de la destruction
             if (InputManager.Instance != null)
             {
                 InputManager.Instance.OnInteractEvent -= TryInteract;
             }
         }
 
-        private void TryInteract()
+        private void OnDrawGizmosSelected()
         {
-            IInteractable target = null;
+            // Visualisation de la zone de détection dans l'éditeur
+            Gizmos.color = Color.yellow;
 
             if (detectionMode == DetectionMode.CameraRay)
             {
-                target = DetectByRay();
+                Gizmos.DrawRay(transform.position, transform.forward * interactionDistance);
             }
-            else // PlayerCone
+            else
             {
-                target = DetectByCone();
-            }
+                Gizmos.DrawWireSphere(transform.position, interactionDistance);
 
-            // Si on a trouvé une cible valide
+                // Visualisation de l'angle du cône
+                Vector3 leftRay = Quaternion.AngleAxis(-fieldOfView / 2, Vector3.up) * transform.forward;
+                Vector3 rightRay = Quaternion.AngleAxis(fieldOfView / 2, Vector3.up) * transform.forward;
+
+                Gizmos.color = Color.blue;
+                Gizmos.DrawRay(transform.position, leftRay * interactionDistance);
+                Gizmos.DrawRay(transform.position, rightRay * interactionDistance);
+            }
+        }
+
+        #endregion
+
+        #region Interaction Logic
+
+        /// <summary>
+        /// Tente de déclencher l'interaction sur l'objet détecté le plus pertinent.
+        /// </summary>
+        private void TryInteract()
+        {
+            IInteractable target = (detectionMode == DetectionMode.CameraRay)
+                ? DetectByRay()
+                : DetectByCone();
+
             if (target != null)
             {
                 target.Interact();
             }
         }
 
-        // Méthode 1 : Le Raycast classique (FPS)
         private IInteractable DetectByRay()
         {
+            // Lancer de rayon depuis la position actuelle vers l'avant
             Ray ray = new Ray(transform.position, transform.forward);
+
             if (Physics.Raycast(ray, out RaycastHit hit, interactionDistance, interactableLayer))
             {
                 return hit.collider.GetComponent<IInteractable>();
@@ -69,10 +102,9 @@ namespace MyLibrary.Modules.Interaction
             return null;
         }
 
-        // Méthode 2 : Le Cône de détection (TPS)
         private IInteractable DetectByCone()
         {
-            // 1. On récupère tous les objets autour du joueur (Sphère)
+            // Récupération de tous les colliders dans le rayon d'action
             Collider[] hits = Physics.OverlapSphere(transform.position, interactionDistance, interactableLayer);
 
             IInteractable closestInteractable = null;
@@ -80,21 +112,16 @@ namespace MyLibrary.Modules.Interaction
 
             foreach (var hit in hits)
             {
-                // 2. Vérification de l'angle
                 Vector3 directionToTarget = (hit.transform.position - transform.position).normalized;
-                // On met y à 0 pour ignorer la hauteur
-                directionToTarget.y = 0;
+                directionToTarget.y = 0; // Projection sur le plan horizontal
 
-                float angle = Vector3.Angle(transform.forward, directionToTarget);
-
-                if (angle < fieldOfView / 2)
+                // Vérification si l'objet est dans le champ de vision (FOV)
+                if (Vector3.Angle(transform.forward, directionToTarget) < fieldOfView / 2)
                 {
-                    // 3. On cherche le plus proche parmi ceux qui sont devant
                     float distance = Vector3.Distance(transform.position, hit.transform.position);
-
-                    // On vérifie s'il a bien le script IInteractable
                     IInteractable interactable = hit.GetComponent<IInteractable>();
 
+                    // Sélection de l'objet valide le plus proche
                     if (interactable != null && distance < closestDistance)
                     {
                         closestDistance = distance;
@@ -105,26 +132,6 @@ namespace MyLibrary.Modules.Interaction
             return closestInteractable;
         }
 
-        // Dessins de debug améliorés
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.yellow;
-            if (detectionMode == DetectionMode.CameraRay)
-            {
-                Gizmos.DrawRay(transform.position, transform.forward * interactionDistance);
-            }
-            else
-            {
-                // Dessine la zone du cone
-                Gizmos.DrawWireSphere(transform.position, interactionDistance);
-
-                // Dessine les limites du cone
-                Vector3 leftRay = Quaternion.AngleAxis(-fieldOfView / 2, Vector3.up) * transform.forward;
-                Vector3 rightRay = Quaternion.AngleAxis(fieldOfView / 2, Vector3.up) * transform.forward;
-                Gizmos.color = Color.blue;
-                Gizmos.DrawRay(transform.position, leftRay * interactionDistance);
-                Gizmos.DrawRay(transform.position, rightRay * interactionDistance);
-            }
-        }
+        #endregion
     }
 }

@@ -200,7 +200,7 @@ GameObject:
   - component: {fileID: 7742195781281492742}
   m_Layer: 9
   m_Name: Player_FPS
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

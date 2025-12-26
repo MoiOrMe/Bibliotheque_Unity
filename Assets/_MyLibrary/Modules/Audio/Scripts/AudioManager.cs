@@ -6,25 +6,35 @@ using UnityEngine.Audio;
 namespace MyLibrary.Modules.Audio
 {
     /// <summary>
-    /// Gestionnaire Audio centralisé.
-    /// Gère la musique de fond (avec fondu) et les bruitages (SFX).
+    /// Gestionnaire Audio centralisé (Singleton).
+    /// Gère la lecture de la musique (avec cross-fade) et des bruitages via AudioMixer.
     /// </summary>
     public class AudioManager : Singleton<AudioManager>
     {
-        [Header("Configuration Mixer")]
-        public AudioMixer mainMixer; // Référence au fichier MainMixer
-        public AudioMixerGroup musicGroup; // Le groupe Music
-        public AudioMixerGroup sfxGroup; // Le groupe SFX
+        #region Settings
 
-        // On crée deux sources audio virtuelles : une pour la musique, une pour les bruitages.
+        [Header("Audio Configuration")]
+        public AudioMixer mainMixer;
+        public AudioMixerGroup musicGroup;
+        public AudioMixerGroup sfxGroup;
+
+        #endregion
+
+        #region Internal State
+
+        // Sources audio virtuelles générées au runtime
         private AudioSource _musicSource;
         private AudioSource _sfxSource;
+
+        #endregion
+
+        #region Initialization
 
         protected override void Awake()
         {
             base.Awake();
 
-            // Création dynamique des sources si elles n'existent pas
+            // Initialisation de la source musique si inexistante
             if (_musicSource == null)
             {
                 _musicSource = gameObject.AddComponent<AudioSource>();
@@ -32,6 +42,7 @@ namespace MyLibrary.Modules.Audio
                 _musicSource.loop = true;
             }
 
+            // Initialisation de la source SFX si inexistante
             if (_sfxSource == null)
             {
                 _sfxSource = gameObject.AddComponent<AudioSource>();
@@ -41,23 +52,29 @@ namespace MyLibrary.Modules.Audio
 
         private void Start()
         {
+            // Application des volumes sauvegardés dès le démarrage
             InitializeVolume();
         }
 
+        #endregion
+
+        #region Volume Management
+
+        /// <summary>
+        /// Charge les préférences utilisateur (PlayerPrefs) et applique les volumes au Mixer.
+        /// </summary>
         public void InitializeVolume()
         {
-            // On récupère les valeurs sauvegardées ou 0.75 par défaut
             float musicVol = PlayerPrefs.GetFloat("MusicVol", 0.75f);
             float sfxVol = PlayerPrefs.GetFloat("SFXVol", 0.75f);
 
-            // On applique la formule logarithmique tout de suite
             SetMixerVolume("MusicVol", musicVol);
             SetMixerVolume("SFXVol", sfxVol);
         }
 
         private void SetMixerVolume(string paramName, float normalizedVolume)
         {
-            // La même formule que dans l'UI
+            // Conversion échelle linéaire (0-1) vers échelle logarithmique décibels (-80dB à 0dB)
             float dbVolume = Mathf.Log10(Mathf.Clamp(normalizedVolume, 0.0001f, 1f)) * 20;
 
             if (mainMixer != null)
@@ -67,38 +84,40 @@ namespace MyLibrary.Modules.Audio
         }
 
         /// <summary>
-        /// Joue un bruitage (SFX).
+        /// Ajuste le volume de la source musique (utilisé pour les fondus internes).
         /// </summary>
-        /// <param name="clip">Le fichier son à jouer</param>
-        /// <param name="volume">Volume (0 à 1), par défaut à 1</param>
+        public void SetMusicVolume(float volume)
+        {
+            _musicSource.volume = Mathf.Clamp01(volume);
+        }
+
+        #endregion
+
+        #region Playback Methods
+
+        /// <summary>
+        /// Joue un clip audio en tant que bruitage (sans interrompre les autres sons).
+        /// </summary>
         public void PlaySFX(AudioClip clip, float volume = 1f)
         {
             if (clip == null) return;
-
-            // PlayOneShot permet de jouer plusieurs sons en même temps
-            // sur la même source sans qu'ils se coupent la parole.
-            // Idéal pour des coups de feu rapides ou des pièces ramassées.
             _sfxSource.PlayOneShot(clip, volume);
         }
 
         /// <summary>
-        /// Change la musique de fond avec un fondu et un volume spécifique.
+        /// Lance une nouvelle musique avec une transition en fondu enchaîné.
         /// </summary>
-        /// <param name="newClip">La nouvelle musique</param>
-        /// <param name="fadeDuration">Temps de transition</param>
-        /// <param name="volume">Volume cible (0 à 1)</param>
         public void PlayMusic(AudioClip newClip, float fadeDuration = 1.0f, float volume = 1.0f)
         {
             if (_musicSource.clip == newClip) return;
             StartCoroutine(FadeMusicRoutine(newClip, fadeDuration, volume));
         }
 
-        // --- OUTILS INTERNES (Coroutines) ---
         private IEnumerator FadeMusicRoutine(AudioClip newClip, float duration, float targetVolume)
         {
             float startVolume = _musicSource.volume;
 
-            // 1. Fade Out
+            // Phase de Fade Out
             if (_musicSource.isPlaying)
             {
                 for (float t = 0; t < duration / 2; t += Time.deltaTime)
@@ -108,7 +127,7 @@ namespace MyLibrary.Modules.Audio
                 }
             }
 
-            // 2. Changement
+            // Changement du clip
             _musicSource.volume = 0;
             _musicSource.Stop();
             _musicSource.clip = newClip;
@@ -117,7 +136,7 @@ namespace MyLibrary.Modules.Audio
             {
                 _musicSource.Play();
 
-                // 3. Fade In
+                // Phase de Fade In
                 for (float t = 0; t < duration / 2; t += Time.deltaTime)
                 {
                     _musicSource.volume = Mathf.Lerp(0, targetVolume, t / (duration / 2));
@@ -127,10 +146,6 @@ namespace MyLibrary.Modules.Audio
             }
         }
 
-        // --- CONTRÔLE DE VOLUME ---
-        public void SetMusicVolume(float volume)
-        {
-            _musicSource.volume = Mathf.Clamp01(volume);
-        }
+        #endregion
     }
 }

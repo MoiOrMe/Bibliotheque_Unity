@@ -3,36 +3,57 @@ using MyLibrary.Core;
 
 namespace MyLibrary.PlayerControllers
 {
+    /// <summary>
+    /// Contrôleur de personnage à la 3ème personne (TPS).
+    /// Supporte deux modes de navigation : Exploration (Directionnel) et Combat (Strafe).
+    /// </summary>
     public class ThirdPersonController : BasePlayerController
     {
-        // On définit les deux types de déplacements possibles
         public enum RotationMode
         {
-            Exploration, // Le personnage regarde là où il marche
-            Combat       // Le personnage regarde là où la caméra regarde
+            Exploration, // Le personnage s'oriente vers la direction du mouvement (Style Zelda/Mario)
+            Combat       // Le personnage s'oriente toujours vers l'avant de la caméra (Style Fortnite/Gears)
         }
 
-        [Header("Réglages TPS")]
-        public RotationMode rotationMode = RotationMode.Exploration; // Par défaut
-        public Transform cameraTransform; // La caméra principale
-        public float turnSmoothTime = 0.1f; // Temps pour se tourner
+        #region Settings
+
+        [Header("TPS Settings")]
+        public RotationMode rotationMode = RotationMode.Exploration;
+
+        [Tooltip("La caméra de référence pour calculer les directions.")]
+        public Transform cameraTransform;
+
+        [Tooltip("Temps de lissage pour la rotation du personnage en mode Exploration.")]
+        public float turnSmoothTime = 0.1f;
+
+        #endregion
+
+        #region Internal State
 
         private float _turnSmoothVelocity;
+
+        #endregion
+
+        #region Unity Lifecycle
 
         protected override void Start()
         {
             base.Start();
 
-            // On cache la souris
+            // Gestion du curseur
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            // Si l'utilisateur a oublié de mettre la caméra, on prend la MainCamera
+            // Récupération automatique de la caméra principale si non assignée
             if (cameraTransform == null && Camera.main != null)
             {
                 cameraTransform = Camera.main.transform;
             }
         }
+
+        #endregion
+
+        #region Movement Logic
 
         protected override void HandleMovement()
         {
@@ -43,47 +64,57 @@ namespace MyLibrary.PlayerControllers
             {
                 HandleExplorationMovement(direction);
             }
-            else // Mode Combat
+            else
             {
                 HandleCombatMovement(direction);
             }
         }
 
+        /// <summary>
+        /// Logique de déplacement relative à la caméra mais indépendante de son orientation.
+        /// Le personnage tourne le dos à la caméra.
+        /// </summary>
         private void HandleExplorationMovement(Vector3 direction)
         {
             if (direction.magnitude >= 0.1f)
             {
-                // On calcule l'angle vers lequel on veut aller
+                // Calcul de l'angle cible basé sur l'input + l'angle Y de la caméra
                 float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cameraTransform.eulerAngles.y;
 
-                // On tourne le corps doucement
+                // Rotation fluide du corps
                 float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _turnSmoothVelocity, turnSmoothTime);
                 transform.rotation = Quaternion.Euler(0f, angle, 0f);
 
-                // On avance
+                // Calcul du vecteur de déplacement
                 Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+
                 _characterController.Move(moveDir.normalized * CurrentSpeed * Time.deltaTime);
             }
         }
 
+        /// <summary>
+        /// Logique de déplacement latérale (Strafe).
+        /// Le personnage reste aligné avec la caméra.
+        /// </summary>
         private void HandleCombatMovement(Vector3 direction)
         {
-            // Le corps est aligné avec la caméra (sur l'axe Y)
+            // Rotation : Alignement strict avec le regard de la caméra (Axe Y seulement)
             float yawCamera = cameraTransform.eulerAngles.y;
             transform.rotation = Quaternion.Euler(0f, yawCamera, 0f);
 
-            // On calcule le vecteur de déplacement relatif à cette rotation
+            // Mouvement : Calcul relatif à la caméra
             if (direction.magnitude >= 0.1f)
             {
-                // Formule : (DirectionCaméra * InputVertical) + (DroiteCaméra * InputHorizontal)
-                Vector3 moveDir = (cameraTransform.forward * direction.z) + (cameraTransform.right * direction.x);
+                // On projette les vecteurs de la caméra sur le plan horizontal
+                Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
+                Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
 
-                // On aplatit le Y pour ne pas s'envoler si on regarde le ciel
-                moveDir.y = 0;
-                moveDir.Normalize();
+                Vector3 moveDir = (camForward * direction.z) + (camRight * direction.x);
 
-                _characterController.Move(moveDir * CurrentSpeed * Time.deltaTime);
+                _characterController.Move(moveDir.normalized * CurrentSpeed * Time.deltaTime);
             }
         }
+
+        #endregion
     }
 }
