@@ -13,7 +13,7 @@ public class TestAudio : MonoBehaviour
         {
             Debug.Log("Lancement Musique (Volume 10%)...");
             // Arguments : (Clip, DuréeFondu, Volume)
-            AudioManager.Instance.PlayMusic(musiqueTest, 2.0f, 0.1f);
+            AudioManager.Instance.PlayMusic(musiqueTest, 2.0f, 1f);
         }
 
         // Touche B : Lance le bruitage à 50% du volume (0.5f)
@@ -21,7 +21,7 @@ public class TestAudio : MonoBehaviour
         {
             Debug.Log("PAN ! (Bruitage 5%)");
             // Arguments : (Clip, Volume)
-            AudioManager.Instance.PlaySFX(bruitageTest, 0.05f);
+            AudioManager.Instance.PlaySFX(bruitageTest, 1f);
         }
     }
 }

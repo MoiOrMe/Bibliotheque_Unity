@@ -1,6 +1,7 @@
-using UnityEngine;
-using System.Collections;
 using MyLibrary.Core;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.Audio;
 
 namespace MyLibrary.Modules.Audio
 {
@@ -10,6 +11,11 @@ namespace MyLibrary.Modules.Audio
     /// </summary>
     public class AudioManager : Singleton<AudioManager>
     {
+        [Header("Configuration Mixer")]
+        public AudioMixer mainMixer; // Référence au fichier MainMixer
+        public AudioMixerGroup musicGroup; // Le groupe Music
+        public AudioMixerGroup sfxGroup; // Le groupe SFX
+
         // On crée deux sources audio virtuelles : une pour la musique, une pour les bruitages.
         private AudioSource _musicSource;
         private AudioSource _sfxSource;
@@ -18,15 +24,46 @@ namespace MyLibrary.Modules.Audio
         {
             base.Awake();
 
-            // Création automatique des composants AudioSource sur l'objet du Manager.
+            // Création dynamique des sources si elles n'existent pas
+            if (_musicSource == null)
+            {
+                _musicSource = gameObject.AddComponent<AudioSource>();
+                _musicSource.outputAudioMixerGroup = musicGroup;
+                _musicSource.loop = true;
+            }
 
-            // 1. Configuration de la source MUSIQUE
-            _musicSource = gameObject.AddComponent<AudioSource>();
-            _musicSource.loop = true; // La musique doit tourner en boucle
+            if (_sfxSource == null)
+            {
+                _sfxSource = gameObject.AddComponent<AudioSource>();
+                _sfxSource.outputAudioMixerGroup = sfxGroup;
+            }
+        }
 
-            // 2. Configuration de la source SFX
-            _sfxSource = gameObject.AddComponent<AudioSource>();
-            _sfxSource.loop = false; // Un bruitage ne boucle pas
+        private void Start()
+        {
+            InitializeVolume();
+        }
+
+        public void InitializeVolume()
+        {
+            // On récupère les valeurs sauvegardées ou 0.75 par défaut
+            float musicVol = PlayerPrefs.GetFloat("MusicVol", 0.75f);
+            float sfxVol = PlayerPrefs.GetFloat("SFXVol", 0.75f);
+
+            // On applique la formule logarithmique tout de suite
+            SetMixerVolume("MusicVol", musicVol);
+            SetMixerVolume("SFXVol", sfxVol);
+        }
+
+        private void SetMixerVolume(string paramName, float normalizedVolume)
+        {
+            // La même formule que dans l'UI
+            float dbVolume = Mathf.Log10(Mathf.Clamp(normalizedVolume, 0.0001f, 1f)) * 20;
+
+            if (mainMixer != null)
+            {
+                mainMixer.SetFloat(paramName, dbVolume);
+            }
         }
 
         /// <summary>
