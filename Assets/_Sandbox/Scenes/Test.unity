@@ -467,9 +467,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1015259588}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dcc050abaa571564d903b0970296d08b, type: 3}
+  m_Script: {fileID: 11500000, guid: 171f15cfbaf7f7144b6c00dbbe2e4652, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  musiqueTest: {fileID: 8300000, guid: 88478a6e37f54314e808b2474a8085ee, type: 3}
+  bruitageTest: {fileID: 8300000, guid: f490e177e1ebe47449d146f35f630501, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
