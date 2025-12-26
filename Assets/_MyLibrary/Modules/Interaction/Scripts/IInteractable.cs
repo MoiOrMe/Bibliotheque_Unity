@@ -1,16 +1,12 @@
 namespace MyLibrary.Modules.Interaction
 {
-    /// <summary>
-    /// Ce n'est pas une classe MonoBehaviour, c'est une INTERFACE.
-    /// Tout objet qui veut être interactif
-    /// DOIT posséder cette méthode Interact().
-    /// </summary>
+    // Interface définissant le contrat pour tout objet interactif.
     public interface IInteractable
     {
-        // La méthode que l'objet devra exécuter quand on appuie sur E
+        // Méthode exécutée lors de l'interaction (Touche 'E' ou Bouton Action).
         void Interact();
 
-        // Un texte pour l'UI (ex: "Ouvrir", "Ramasser", "Parler")
+        // Texte contextuel à afficher dans l'UI (ex: "Ouvrir Porte").
         string InteractionPrompt { get; }
     }
 }

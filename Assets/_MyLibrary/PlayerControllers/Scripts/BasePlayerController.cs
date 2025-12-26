@@ -3,32 +3,51 @@ using MyLibrary.Core;
 
 namespace MyLibrary.PlayerControllers
 {
-    // On oblige l'objet à avoir un CharacterController (le composant physique d'Unity)
+    /// <summary>
+    /// Classe abstraite de base pour tous les contrôleurs humanoïdes (FPS, TPS, SideView).
+    /// Gère la physique fondamentale : Gravité, Détection du sol, Saut et Vitesse de déplacement.
+    /// Nécessite un composant CharacterController sur l'objet.
+    /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public abstract class BasePlayerController : MonoBehaviour
     {
-        [Header("Réglages Mouvement")]
+        #region Settings
+
+        [Header("Movement Settings")]
+        [Tooltip("Vitesse de marche standard.")]
         public float walkSpeed = 5.0f;
+
+        [Tooltip("Vitesse de course (lorsque la touche Sprint est maintenue).")]
         public float sprintSpeed = 10.0f;
 
-        [Header("Réglages Saut & Gravité")]
+        [Header("Jump & Gravity")]
         public float jumpHeight = 1.2f;
         public float gravity = -9.81f;
 
-        [Header("Ground Check (Solution Pro)")]
-        public Transform groundCheck;        // Un objet vide placé aux pieds
-        public float groundDistance = 0.2f;  // Rayon de la sphère de détection
-        public LayerMask groundMask;         // Ce qui est considéré comme du sol
+        [Header("Ground Detection")]
+        [Tooltip("Transform situé aux pieds du joueur.")]
+        public Transform groundCheck;
+        [Tooltip("Rayon de la sphère de détection du sol.")]
+        public float groundDistance = 0.2f;
+        [Tooltip("Layers considérés comme étant du sol.")]
+        public LayerMask groundMask;
+
+        #endregion
+
+        #region Internal State
 
         protected CharacterController _characterController;
-        protected Vector3 _velocity; // Pour gérer la chute et le saut
+        protected Vector3 _velocity;
         protected bool _isGrounded;
 
+        /// <summary>
+        /// Retourne la vitesse actuelle basée sur l'état du sprint.
+        /// </summary>
         public float CurrentSpeed
         {
             get
             {
-                if (InputManager.Instance.IsSprintPressed)
+                if (InputManager.Instance != null && InputManager.Instance.IsSprintPressed)
                 {
                     return sprintSpeed;
                 }
@@ -36,68 +55,82 @@ namespace MyLibrary.PlayerControllers
             }
         }
 
+        #endregion
+
+        #region Unity Lifecycle
+
         protected virtual void Start()
         {
             _characterController = GetComponent<CharacterController>();
+
+            if (groundCheck == null)
+            {
+                Debug.LogWarning($"{name} : Le GroundCheck n'est pas assigné !");
+            }
         }
 
         protected virtual void Update()
         {
-            CheckGround();     // 1. D'abord on vérifie le sol
-            HandleGravity();   // 2. Ensuite on applique la gravité selon le résultat du 1
-            HandleMovement();  // 3. Enfin on bouge (Sera défini par les enfants (FPS/TPS))
+            CheckGround();
+            HandleGravity();
+            HandleMovement();
         }
 
+        private void OnDrawGizmosSelected()
+        {
+            // Visualisation de la sphère de détection dans l'éditeur
+            if (groundCheck != null)
+            {
+                Gizmos.color = _isGrounded ? Color.green : Color.red;
+                Gizmos.DrawWireSphere(groundCheck.position, groundDistance);
+            }
+        }
+
+        #endregion
+
+        #region Physics Logic
+
+        /// <summary>
+        /// Vérifie la présence de sol sous les pieds du joueur.
+        /// </summary>
         private void CheckGround()
         {
             if (groundCheck == null) return;
 
-            // On utilise OverlapSphere pour récupérer la liste de TOUT ce qu'on touche
-            Collider[] hits = Physics.OverlapSphere(groundCheck.position, groundDistance, groundMask);
-
-            // DEBUG FORCE : Affiche dans la console ce qu'on touche
-            if (hits.Length > 0)
-            {
-                _isGrounded = true;
-            }
-            else
-            {
-                _isGrounded = false;
-            }
+            // Optimisation : CheckSphere est plus léger que OverlapSphere car il ne génère pas de tableau
+            _isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
         }
 
+        /// <summary>
+        /// Applique la gravité et gère le saut via le CharacterController.
+        /// </summary>
         private void HandleGravity()
         {
-            // Si on est au sol et qu'on descendait, on stabilise la vélocité
+            // Stabilisation de la vélocité au sol pour éviter d'accumuler une gravité infinie
             if (_isGrounded && _velocity.y < 0)
             {
                 _velocity.y = -2f;
             }
 
-            // Le saut
-            if (InputManager.Instance.IsJumpPressed && _isGrounded)
+            // Gestion du saut
+            if (InputManager.Instance != null && InputManager.Instance.IsJumpPressed && _isGrounded)
             {
+                // Formule physique : V = Racine(2 * Hauteur * -Gravité)
                 _velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             }
 
-            // Application de la gravité
+            // Application de la gravité (chute libre)
             _velocity.y += gravity * Time.deltaTime;
+
+            // Déplacement vertical
             _characterController.Move(_velocity * Time.deltaTime);
         }
 
-        // "abstract" signifie : "Les enfants DOIVENT coder leur propre façon de bouger"
+        /// <summary>
+        /// Méthode abstraite devant être implémentée par les classes enfants pour définir le déplacement horizontal.
+        /// </summary>
         protected abstract void HandleMovement();
 
-        private void OnDrawGizmos()
-        {
-            if (groundCheck != null)
-            {
-                // Si on est au sol, la boule est VERTE. Sinon elle est ROUGE.
-                Gizmos.color = _isGrounded ? Color.green : Color.red;
-
-                // On dessine la sphère pour voir sa taille et sa position exacte
-                Gizmos.DrawWireSphere(groundCheck.position, groundDistance);
-            }
-        }
+        #endregion
     }
 }

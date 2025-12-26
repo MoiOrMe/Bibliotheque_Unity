@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7702408028135793467}
   m_Layer: 9
   m_Name: PlayerTPSExploration
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -84,6 +84,7 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 1
+  rotationMode: 0
   cameraTransform: {fileID: 0}
   turnSmoothTime: 0.1
 --- !u!114 &7702408028135793467

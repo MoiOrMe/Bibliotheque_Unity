@@ -5,63 +5,76 @@ using System.Threading.Tasks;
 
 namespace MyLibrary.Core
 {
+    /// <summary>
+    /// Gestionnaire unique responsable du chargement asynchrone des scènes.
+    /// Gère les transitions et empêche les chargements multiples simultanés.
+    /// </summary>
     public class SceneLoader : Singleton<SceneLoader>
     {
-        // Empêche de lancer deux chargements en même temps
         private bool _isLoading = false;
 
+        #region Public API
+
         /// <summary>
-        /// Charge une scène par son nom avec une petite sécurité.
+        /// Initie le chargement asynchrone d'une scène par son nom.
         /// </summary>
+        /// <param name="sceneName">Nom exact de la scène dans les Build Settings.</param>
         public async void LoadScene(string sceneName)
         {
             if (_isLoading) return;
             if (string.IsNullOrEmpty(sceneName)) return;
 
-            // Vérifie si la scène existe dans le Build Settings
+            // Vérification de sécurité : la scène existe-t-elle dans le build ?
             if (SceneUtility.GetBuildIndexByScenePath(sceneName) == -1)
             {
-                Debug.LogError($"La scène '{sceneName}' n'est pas ajoutée dans les Build Settings !");
+                Debug.LogError($"SceneLoader : La scène '{sceneName}' est introuvable dans les Build Settings.");
                 return;
             }
 
             _isLoading = true;
-            Debug.Log($"Chargement de la scène : {sceneName}...");
+            Debug.Log($"SceneLoader : Début du chargement de '{sceneName}'...");
 
-            // Optionnel : Ici on pourrait lancer une animation de "Fade Out" (Ecran noir)
+            // TODO: Déclencher ici une animation de transition (Fade Out)
 
-            // On attend une petite frame pour laisser le temps à l'UI de réagir
+            // Attente d'une frame pour garantir la mise à jour de l'UI avant le chargement lourd
             await Task.Yield();
 
-            // Chargement Asynchrone
+            // Lancement du chargement en arrière-plan
             AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
 
-            // On attend que ce soit fini
+            // Boucle d'attente jusqu'à la fin du chargement
             while (!operation.isDone)
             {
-                // Ici on pourrait mettre à jour une barre de progression : operation.progress
+                // TODO: Mettre à jour une barre de chargement via operation.progress
                 await Task.Yield();
             }
 
-            // Optionnel : Ici on lancerait le "Fade In"
+            // TODO: Déclencher l'animation de retour (Fade In)
+
             _isLoading = false;
         }
 
-        // Raccourci pour recharger la scène actuelle
+        /// <summary>
+        /// Recharge la scène active (utile pour le Game Over).
+        /// </summary>
         public void ReloadCurrentScene()
         {
             LoadScene(SceneManager.GetActiveScene().name);
         }
 
-        // Raccourci pour quitter le jeu
+        /// <summary>
+        /// Ferme l'application ou arrête le mode Play dans l'éditeur.
+        /// </summary>
         public void QuitGame()
         {
-            Debug.Log("QUIT GAME");
+            Debug.Log("SceneLoader : Fermeture de l'application.");
             Application.Quit();
 
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #endif
         }
+
+        #endregion
     }
 }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -7,24 +6,36 @@ using UnityEngine.UI;
 
 namespace MyLibrary.Modules.UI
 {
+    /// <summary>
+    /// Gère l'interface des paramètres (Audio et Vidéo) et la sauvegarde des préférences utilisateur via PlayerPrefs.
+    /// Interagit directement avec l'AudioMixer pour le volume.
+    /// </summary>
     public class OptionsMenuUI : MonoBehaviour
     {
-        [Header("Audio")]
+        #region References
+
+        [Header("Audio References")]
         public AudioMixer mainMixer;
         public Slider musicSlider;
         public Slider sfxSlider;
 
-        [Header("Video")]
+        [Header("Video References")]
         public TMP_Dropdown resolutionDropdown;
         public Toggle fullscreenToggle;
 
+        #endregion
+
+        #region Internal State
+
         private Resolution[] _resolutions;
+
+        #endregion
+
+        #region Initialization
 
         private void Start()
         {
-            // Initialiser les valeurs Audio
-            // On utilise une échelle logarithmique pour le son car le mixer est en décibels (-80 à 0)
-
+            // Initialisation des Sliders Audio avec les valeurs sauvegardées
             float savedMusic = PlayerPrefs.GetFloat("MusicVol", 0.75f);
             musicSlider.value = savedMusic;
             SetMusicVolume(savedMusic);
@@ -33,10 +44,15 @@ namespace MyLibrary.Modules.UI
             sfxSlider.value = savedSFX;
             SetSFXVolume(savedSFX);
 
-            // Initialiser la Vidéo
+            // Initialisation de la case plein écran
             fullscreenToggle.isOn = Screen.fullScreen;
 
-            // Remplir le dropdown de résolutions automatiquement selon l'écran du joueur
+            // Configuration de la liste des résolutions supportées par l'écran
+            SetupResolutionDropdown();
+        }
+
+        private void SetupResolutionDropdown()
+        {
             _resolutions = Screen.resolutions;
             resolutionDropdown.ClearOptions();
 
@@ -60,15 +76,17 @@ namespace MyLibrary.Modules.UI
             resolutionDropdown.RefreshShownValue();
         }
 
-        // --- FONCTIONS AUDIO ---
+        #endregion
+
+        #region Audio Logic
+
         public void SetMusicVolume(float volume)
         {
-            // Le slider va de 0.0001 à 1. 
-            // Formule magique pour convertir en Décibels : Log10(valeur) * 20
+            // Conversion linéaire vers logarithmique (dB) pour le Mixer
             float dbVolume = Mathf.Log10(Mathf.Clamp(volume, 0.0001f, 1f)) * 20;
 
             mainMixer.SetFloat("MusicVol", dbVolume);
-            PlayerPrefs.SetFloat("MusicVol", volume); // On sauvegarde
+            PlayerPrefs.SetFloat("MusicVol", volume);
         }
 
         public void SetSFXVolume(float volume)
@@ -79,7 +97,10 @@ namespace MyLibrary.Modules.UI
             PlayerPrefs.SetFloat("SFXVol", volume);
         }
 
-        // --- FONCTIONS VIDEO (Reliées aux UI) ---
+        #endregion
+
+        #region Video Logic
+
         public void SetFullscreen(bool isFullscreen)
         {
             Screen.fullScreen = isFullscreen;
@@ -89,7 +110,8 @@ namespace MyLibrary.Modules.UI
         {
             Resolution resolution = _resolutions[resolutionIndex];
             Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen);
-            Debug.Log($"Changement de résolution demandé : {resolution.width} x {resolution.height}");
         }
+
+        #endregion
     }
 }

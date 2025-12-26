@@ -5,71 +5,127 @@ using System;
 namespace MyLibrary.Core
 {
     /// <summary>
-    /// Gère toutes les entrées du joueur (Clavier, Souris, Manette).
-    /// Il sert d'intermédiaire : il écoute le système d'Unity et distribue l'info au jeu.
-    /// Hérite de Singleton pour être accessible partout via InputManager.Instance.
+    /// Centralise la gestion des entrées utilisateur via l'Input System d'Unity.
+    /// Distribue les états (Move, Look) et notifie les événements globaux (Interact, Pause).
+    /// Gère également la persistance des rebindings de touches.
     /// </summary>
     public class InputManager : Singleton<InputManager>
     {
-        // Référence vers le script généré automatiquement par Unity
         private GameControls _controls;
 
-        // --- VARIABLES PUBLIQUES (LECTURE SEULE) ---
+        #region Input Data Properties
+
         public Vector2 MoveInput { get; private set; }
         public Vector2 LookInput { get; private set; }
 
         public bool IsJumpPressed { get; private set; }
         public bool IsSprintPressed { get; private set; }
 
+        #endregion
+
+        #region Events
+
+        // Événement déclenché lors de l'action Interagir (écouté par les contrôleurs)
         public event Action OnInteractEvent;
 
-        public event Action OnPauseEvent;
+        #endregion
 
-        // --- INITIALISATION ---
+        #region Initialization
+
         protected override void Awake()
         {
-            base.Awake(); // On garde la logique du Singleton
-
-            // On instancie la carte des contrôles
+            base.Awake();
             _controls = new GameControls();
         }
 
-        /// <summary>
-        /// OnEnable est appelé quand l'objet s'active (ou au lancement du jeu).
-        /// C'est ici qu'on "branche" les câbles pour écouter les touches.
-        /// </summary>
         private void OnEnable()
         {
             _controls.Enable();
 
-            // S'ABONNER AUX ÉVÉNEMENTS
-            // Quand l'action "Move" change, on met à jour notre variable MoveInput
+            // Chargement des préférences de touches avant l'initialisation des bindings
+            LoadBindingOverrides();
+            InitializeInputBindings();
+        }
+
+        private void OnDisable()
+        {
+            _controls.Disable();
+        }
+
+        #endregion
+
+        #region Logic & Bindings
+
+        /// <summary>
+        /// Associe les actions de l'Input System aux propriétés et événements de la classe.
+        /// </summary>
+        private void InitializeInputBindings()
+        {
+            // Binding des axes (Vector2)
             _controls.Gameplay.Move.performed += ctx => MoveInput = ctx.ReadValue<Vector2>();
             _controls.Gameplay.Move.canceled += ctx => MoveInput = Vector2.zero;
 
-            // Idem pour le regard
             _controls.Gameplay.Look.performed += ctx => LookInput = ctx.ReadValue<Vector2>();
             _controls.Gameplay.Look.canceled += ctx => LookInput = Vector2.zero;
 
-            // Pour les boutons (Saut, Sprint), on stocke juste l'état
+            // Binding des boutons d'état (Hold)
             _controls.Gameplay.Jump.performed += ctx => IsJumpPressed = true;
             _controls.Gameplay.Jump.canceled += ctx => IsJumpPressed = false;
 
             _controls.Gameplay.Sprint.performed += ctx => IsSprintPressed = true;
             _controls.Gameplay.Sprint.canceled += ctx => IsSprintPressed = false;
 
-            // Au lieu de stocker true/false, on déclenche l'événement "OnInteractEvent" seulement au moment précis de l'appui
+            // Binding des actions ponctuelles (Trigger)
             _controls.Gameplay.Interact.performed += ctx => OnInteractEvent?.Invoke();
-            _controls.Gameplay.Pause.performed += ctx => OnPauseEvent?.Invoke();
+            _controls.Gameplay.Pause.performed += ctx => EventBus.Publish(GameEventType.Pause);
+        }
+
+        #endregion
+
+        #region Persistence
+
+        /// <summary>
+        /// Retourne l'instance d'action active correspondant à une référence d'asset.
+        /// Nécessaire pour modifier les bindings au runtime.
+        /// </summary>
+        public InputAction GetAction(InputActionReference actionRef)
+        {
+            if (actionRef == null || _controls == null) return null;
+            return _controls.asset.FindAction(actionRef.action.id);
         }
 
         /// <summary>
-        /// OnDisable est appelé quand l'objet se désactive ou qu'on quitte le jeu.
-        /// TRES IMPORTANT : Il faut "débrancher" les câbles pour éviter les erreurs de mémoire.
+        /// Sauvegarde les overrides de touches actuels dans les PlayerPrefs (Format JSON).
         /// </summary>
-        private void OnDisable()
+        public void SaveBindingOverrides()
         {
-            _controls.Disable();
+            string rebinds = _controls.SaveBindingOverridesAsJson();
+            PlayerPrefs.SetString("InputOverrides", rebinds);
+            PlayerPrefs.Save();
         }
+
+        /// <summary>
+        /// Charge et applique les overrides de touches depuis les PlayerPrefs.
+        /// </summary>
+        public void LoadBindingOverrides()
+        {
+            string rebinds = PlayerPrefs.GetString("InputOverrides", string.Empty);
+
+            if (!string.IsNullOrEmpty(rebinds))
+            {
+                _controls.LoadBindingOverridesFromJson(rebinds);
+            }
+        }
+
+        /// <summary>
+        /// Supprime tous les overrides et efface la sauvegarde (Retour aux défauts).
+        /// </summary>
+        public void ResetAllBindings()
+        {
+            _controls.RemoveAllBindingOverrides();
+            PlayerPrefs.DeleteKey("InputOverrides");
+        }
+
+        #endregion
     }
 }

@@ -3,45 +3,70 @@ using MyLibrary.Core;
 
 namespace MyLibrary.PlayerControllers
 {
+    /// <summary>
+    /// Contrôleur spécifique pour une vue à la première personne (FPS).
+    /// Gère la rotation de la caméra (Regard vertical) et la rotation du corps (Regard horizontal).
+    /// </summary>
     public class FirstPersonController : BasePlayerController
     {
-        [Header("Réglages FPS")]
-        public Transform playerCamera; // La caméra qui doit bouger
+        #region Settings
+
+        [Header("FPS Settings")]
+        [Tooltip("La caméra attachée au joueur (doit être un enfant).")]
+        public Transform playerCamera;
+
+        [Tooltip("Sensibilité de la souris.")]
         public float mouseSensitivity = 2.0f;
-        public float maxLookAngle = 90f; // Limite de rotation verticale
+
+        [Tooltip("Angle maximum de regard vers le haut/bas.")]
+        public float maxLookAngle = 90f;
+
+        #endregion
+
+        #region Internal State
 
         private float _xRotation = 0f;
 
+        #endregion
+
+        #region Unity Lifecycle
+
         protected override void Start()
         {
-            base.Start(); // Lance le Start du parent (récupère le CharacterController)
+            base.Start();
 
-            // On verrouille la souris au centre de l'écran
+            // Tentative de récupération automatique de la caméra si non assignée
+            if (playerCamera == null)
+            {
+                playerCamera = GetComponentInChildren<Camera>()?.transform;
+                if (playerCamera == null) Debug.LogError($"{name} : Aucune caméra trouvée !");
+            }
+
+            // Verrouillage du curseur pour le gameplay FPS
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
 
         protected override void Update()
         {
-            // On appelle d'abord la gravité du parent
-            base.Update();
-
-            // Puis on gère le regard spécifique au FPS
+            base.Update(); // Appelle la gravité et le CheckGround
             HandleLook();
         }
 
-        // Implémentation du mouvement obligatoire demandée par le parent
+        #endregion
+
+        #region Movement & Look Logic
+
         protected override void HandleMovement()
         {
-            // Lire les inputs
+            // Récupération des inputs via le Singleton
             Vector2 input = InputManager.Instance.MoveInput;
 
-            // Calculer la direction relative à l'orientation du joueur
-            // transform.right = mon côté droit local
-            // transform.forward = mon devant local
+            // Calcul du vecteur de mouvement relatif à la rotation du joueur
+            // transform.right = X local, transform.forward = Z local
             Vector3 move = transform.right * input.x + transform.forward * input.y;
 
-            // Appliquer le mouvement
+            // Application du mouvement via le CharacterController du parent
             _characterController.Move(move * CurrentSpeed * Time.deltaTime);
         }
 
@@ -49,23 +74,22 @@ namespace MyLibrary.PlayerControllers
         {
             if (playerCamera == null) return;
 
-            // Ne rien faire si le jeu est en pause
+            // Empêche la caméra de bouger si le jeu est en pause (Time.timeScale == 0)
             if (Time.timeScale == 0f) return;
 
-            // Lire la souris
             Vector2 mouseInput = InputManager.Instance.LookInput;
-
             float mouseX = mouseInput.x * mouseSensitivity;
             float mouseY = mouseInput.y * mouseSensitivity;
 
-            // Rotation Verticale (Regarder haut/bas) -> On pivote la CAMERA
+            // Axe Vertical (Pitch) : On pivote la caméra localement
             _xRotation -= mouseY;
-            _xRotation = Mathf.Clamp(_xRotation, -maxLookAngle, maxLookAngle); // Bloquer à 90°
-
+            _xRotation = Mathf.Clamp(_xRotation, -maxLookAngle, maxLookAngle);
             playerCamera.localRotation = Quaternion.Euler(_xRotation, 0f, 0f);
 
-            // Rotation Horizontale (Tourner le corps) -> On pivote le JOUEUR entier
+            // Axe Horizontal (Yaw) : On pivote tout le corps du joueur
             transform.Rotate(Vector3.up * mouseX);
         }
+
+        #endregion
     }
 }
