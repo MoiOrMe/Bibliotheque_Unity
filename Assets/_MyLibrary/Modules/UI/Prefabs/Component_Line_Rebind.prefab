@@ -298,7 +298,7 @@ GameObject:
   - component: {fileID: 8442047260379057325}
   - component: {fileID: 7272927129423196233}
   m_Layer: 5
-  m_Name: Line_Rebind
+  m_Name: Component_Line_Rebind
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

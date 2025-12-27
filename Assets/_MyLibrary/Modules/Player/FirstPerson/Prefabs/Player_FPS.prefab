@@ -284,5 +284,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ceec3c6f0fcdc3a4a8115b9b24c1c73d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inventorySize: 20
+  inventorySize: 99
   slots: []
