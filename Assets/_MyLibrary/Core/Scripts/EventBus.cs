@@ -5,6 +5,20 @@ using UnityEngine;
 namespace MyLibrary.Core
 {
     /// <summary>
+    /// Liste exhaustive des types d'événements possibles dans le jeu.
+    /// Utilisé par l'EventBus pour identifier les messages.
+    /// </summary>
+    public enum GameEventType
+    {
+        PlayerDied,
+        GameOver,
+        LevelComplete,
+        Pause,
+        Resume,
+        ScoreChanged
+    }
+
+    /// <summary>
     /// Système de messagerie statique global (Pattern Observer).
     /// Permet aux scripts de communiquer sans dépendance directe via des événements typés.
     /// </summary>

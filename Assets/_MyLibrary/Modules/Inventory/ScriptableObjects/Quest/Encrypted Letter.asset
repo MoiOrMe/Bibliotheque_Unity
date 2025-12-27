@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33d4e928949215946a60e816e7c50db2, type: 3}
+  m_Name: Encrypted Letter
+  m_EditorClassIdentifier: 
+  id: 51bf3aba-3a4f-491e-a772-f7ee01571aff
+  itemName: Mysterious Note
+  description: "Impossible \xE0 lire pour le moment."
+  icon: {fileID: 0}
+  type: 3
+  maxStackSize: 1
+  isDiscardable: 0
