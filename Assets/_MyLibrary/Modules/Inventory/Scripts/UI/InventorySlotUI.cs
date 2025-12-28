@@ -1,6 +1,7 @@
+using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 namespace MyLibrary.Modules.Inventory.UI
 {
@@ -18,6 +19,32 @@ namespace MyLibrary.Modules.Inventory.UI
         [Tooltip("Le texte qui affichera la quantité (stack).")]
         public TextMeshProUGUI amountText;
 
+        [Tooltip("Le boutton de la case.")]
+        public Button slotButton;
+
+        private InventorySlot _currentSlot;
+
+        public event System.Action<InventorySlot, InventorySlotUI> OnSlotClicked;
+        #endregion
+
+        #region Unity Methods
+
+        private void Start()
+        {
+            if (slotButton != null)
+            {
+                slotButton.onClick.AddListener(OnClick);
+            }
+        }
+
+        private void OnClick()
+        {
+            if (_currentSlot != null && !_currentSlot.IsEmpty)
+            {
+                OnSlotClicked?.Invoke(_currentSlot, this);
+            }
+        }
+
         #endregion
 
         #region Public Methods
@@ -27,6 +54,8 @@ namespace MyLibrary.Modules.Inventory.UI
         /// </summary>
         public void SetItem(InventorySlot slot)
         {
+            _currentSlot = slot;
+
             if (slot != null && !slot.IsEmpty)
             {
                 iconImage.sprite = slot.itemData.icon;
@@ -48,6 +77,9 @@ namespace MyLibrary.Modules.Inventory.UI
             {
                 Clear();
             }
+
+            if (slotButton != null)
+                slotButton.interactable = !slot.IsEmpty;
         }
 
         /// <summary>

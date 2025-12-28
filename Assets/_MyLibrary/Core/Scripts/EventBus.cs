@@ -15,7 +15,8 @@ namespace MyLibrary.Core
         LevelComplete,
         Pause,
         Resume,
-        ScoreChanged
+        ScoreChanged,
+        Inventory
     }
 
     /// <summary>

@@ -17,6 +17,16 @@ namespace MyLibrary.Modules.Inventory
 
         #endregion
 
+        #region UI Overrides
+
+        // Le bouton Utiliser est désactivé par défaut pour les quêtes
+        public override bool IsUsable => false;
+
+        // Le bouton Jeter dépend de la configuration spécifique de l'item
+        public override bool IsDroppable => isDiscardable;
+
+        #endregion
+
         #region Editor Logic
 
         // Configuration par défaut : Non stackable et type Quête

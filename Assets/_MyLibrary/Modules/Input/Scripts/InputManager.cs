@@ -16,7 +16,17 @@ namespace MyLibrary.Core
         #region Input Data Properties
 
         public Vector2 MoveInput { get; private set; }
-        public Vector2 LookInput { get; private set; }
+
+        private Vector2 _rawLookInput;
+
+        public Vector2 LookInput
+        {
+            get
+            {
+                if (Cursor.visible) return Vector2.zero;
+                return _rawLookInput;
+            }
+        }
 
         public bool IsJumpPressed { get; private set; }
         public bool IsSprintPressed { get; private set; }
@@ -25,9 +35,7 @@ namespace MyLibrary.Core
 
         #region Events
 
-        // Événement déclenché lors de l'action Interagir (écouté par les contrôleurs)
         public event Action OnInteractEvent;
-        public event Action OnInventoryEvent;
 
         #endregion
 
@@ -42,8 +50,6 @@ namespace MyLibrary.Core
         private void OnEnable()
         {
             _controls.Enable();
-
-            // Chargement des préférences de touches avant l'initialisation des bindings
             LoadBindingOverrides();
             InitializeInputBindings();
         }
@@ -57,30 +63,32 @@ namespace MyLibrary.Core
 
         #region Logic & Bindings
 
-        /// <summary>
-        /// Associe les actions de l'Input System aux propriétés et événements de la classe.
-        /// </summary>
         private void InitializeInputBindings()
         {
-            // Binding des axes (Vector2)
+            // --- Axes ---
             _controls.Gameplay.Move.performed += ctx => MoveInput = ctx.ReadValue<Vector2>();
             _controls.Gameplay.Move.canceled += ctx => MoveInput = Vector2.zero;
 
-            _controls.Gameplay.Look.performed += ctx => LookInput = ctx.ReadValue<Vector2>();
-            _controls.Gameplay.Look.canceled += ctx => LookInput = Vector2.zero;
+            _controls.Gameplay.Look.performed += ctx => _rawLookInput = ctx.ReadValue<Vector2>();
+            _controls.Gameplay.Look.canceled += ctx => _rawLookInput = Vector2.zero;
 
-            // Binding des boutons d'état (Hold)
+            // --- États ---
             _controls.Gameplay.Jump.performed += ctx => IsJumpPressed = true;
             _controls.Gameplay.Jump.canceled += ctx => IsJumpPressed = false;
 
             _controls.Gameplay.Sprint.performed += ctx => IsSprintPressed = true;
             _controls.Gameplay.Sprint.canceled += ctx => IsSprintPressed = false;
 
-            // Binding des actions ponctuelles (Trigger)
-            _controls.Gameplay.Interact.performed += ctx => OnInteractEvent?.Invoke();
-            _controls.Gameplay.Inventory.performed += ctx => OnInventoryEvent?.Invoke();
+            // --- Actions Globales (Via EventBus) ---
 
+            // Pause
             _controls.Gameplay.Pause.performed += ctx => EventBus.Publish(GameEventType.Pause);
+
+            // Inventaire (Modification ici)
+            _controls.Gameplay.Inventory.performed += ctx => EventBus.Publish(GameEventType.Inventory);
+
+            // --- Actions Locales ---
+            _controls.Gameplay.Interact.performed += ctx => OnInteractEvent?.Invoke();
         }
 
         #endregion

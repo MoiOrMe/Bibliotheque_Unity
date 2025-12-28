@@ -22,6 +22,13 @@ namespace MyLibrary.Modules.Inventory
             maxStackSize = 10;
         }
 
+        public override bool Use(GameObject user)
+        {
+            Debug.Log($"Le joueur boit {itemName} et récupère {healthRestoreAmount} PV !");
+
+            return true;
+        }
+
         #endregion
     }
 }

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33d4e928949215946a60e816e7c50db2, type: 3}
+  m_Name: Dungeon Key
+  m_EditorClassIdentifier: 
+  id: 0f26179d-917d-46ff-bc17-a30de9acd4fa
+  itemName: Rusty Key
+  description: Ouvre la grande porte en fer au fond de la crypte.
+  icon: {fileID: 21300000, guid: 5e40637f9f0c25e4c99c694518470820, type: 3}
+  type: 3
+  maxStackSize: 1
+  dropPrefab: {fileID: 4908395659604856096, guid: 724cc0b20a5e417438b3761d0a755b04, type: 3}
+  isDiscardable: 0

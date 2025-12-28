@@ -4,34 +4,28 @@ using MyLibrary.Core;
 
 namespace MyLibrary.Modules.UI
 {
-    /// <summary>
-    /// Gestionnaire centralisé de l'interface utilisateur.
-    /// Gère la visibilité des panels en fonction de la scène active et des événements globaux.
-    /// </summary>
     public class UIManager : Singleton<UIManager>
     {
         #region Panel References
 
         [Header("Main Menu")]
-        [Tooltip("Le panel contenant le menu principal (Nouvelle Partie, Options, Quitter).")]
         public GameObject mainMenuPanel;
-
-        [Tooltip("Nom exact de la scène du menu principal pour la détection.")]
         public string mainMenuSceneName = "Menu_Hub";
 
         [Header("Layer : Windows")]
-        [Tooltip("Le panel d'inventaire.")]
         public GameObject inventoryPanel;
-
-        [Tooltip("Le menu de pause.")]
         public GameObject pausePanel;
 
         [Header("Layer : Popups")]
-        [Tooltip("Le menu des options (superposé au reste).")]
         public GameObject optionsPanel;
-
-        [Tooltip("L'écran de Game Over.")]
         public GameObject gameOverPanel;
+
+        #endregion
+
+        #region Internal State
+
+        // Verrou de sécurité pour empêcher toute action UI quand le joueur est mort
+        private bool _isGameOver = false;
 
         #endregion
 
@@ -40,23 +34,14 @@ namespace MyLibrary.Modules.UI
         protected override void Awake()
         {
             base.Awake();
-
-            // Initialisation : Fermeture de tous les panels par sécurité
             CloseAllPanels();
         }
 
         private void OnEnable()
         {
-            // Abonnements événements Gameplay
             EventBus.Subscribe(GameEventType.PlayerDied, OnPlayerDied);
             EventBus.Subscribe(GameEventType.Pause, TogglePauseMenu);
-
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.OnInventoryEvent += ToggleInventory;
-            }
-
-            // Abonnement changement de scène (Unity Natif)
+            EventBus.Subscribe(GameEventType.Inventory, ToggleInventory);
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
@@ -64,12 +49,7 @@ namespace MyLibrary.Modules.UI
         {
             EventBus.Unsubscribe(GameEventType.PlayerDied, OnPlayerDied);
             EventBus.Unsubscribe(GameEventType.Pause, TogglePauseMenu);
-
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.OnInventoryEvent -= ToggleInventory;
-            }
-
+            EventBus.Unsubscribe(GameEventType.Inventory, ToggleInventory);
             SceneManager.sceneLoaded -= OnSceneLoaded;
         }
 
@@ -77,37 +57,32 @@ namespace MyLibrary.Modules.UI
 
         #region Scene Management Logic
 
-        /// <summary>
-        /// Appelé automatiquement par Unity à chaque chargement de scène.
-        /// Configure l'interface selon le contexte (Menu vs Jeu).
-        /// </summary>
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            // 1. Reset des états logiques
+            _isGameOver = false;
+
+            // 2. Nettoyage visuel IMPÉRATIF : On ferme tout (Inventaire, Pause, GameOver...)
+            // C'est cette ligne qui manquait pour le cas "Rejouer"
+            CloseAllPanels();
+
             bool isMainMenu = scene.name == mainMenuSceneName;
 
-            // Gestion du Menu Principal
+            // 3. Gestion spécifique Menu Principal
             if (mainMenuPanel != null)
             {
                 mainMenuPanel.SetActive(isMainMenu);
             }
 
-            // Gestion du Curseur
+            // 4. Configuration Curseur & Temps
             if (isMainMenu)
             {
-                // Dans le menu : Souris visible, pas de lock
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                Time.timeScale = 1f;
-
-                // On s'assure que les menus de jeu (Pause/Inventaire) sont fermés
-                CloseAllPanels();
+                SetMenuState(true, false);
             }
             else
             {
-                // En jeu : Souris lockée par défaut
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-                Time.timeScale = 1f;
+                // En jeu : On verrouille le curseur et on s'assure que le temps s'écoule
+                SetMenuState(false, false);
             }
         }
 
@@ -117,57 +92,71 @@ namespace MyLibrary.Modules.UI
 
         private void OnPlayerDied()
         {
+            // 1. On active le verrou de priorité absolue
+            _isGameOver = true;
+
+            // 2. On ferme tout ce qui pourrait gêner
             CloseAllPanels();
+
+            // 3. On affiche le Game Over
             SetPanelActive(gameOverPanel, true);
 
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            // 4. On gère le curseur
+            SetMenuState(true, true); // (Optionnel : true/true pour figer le temps si voulu)
         }
 
         private void TogglePauseMenu()
         {
-            // Interdit d'ouvrir la pause si on est dans le menu principal
-            if (mainMenuPanel != null && mainMenuPanel.activeSelf) return;
+            // PRIORITÉ 1 : Si Game Over ou Menu Principal, on ignore la touche Pause
+            if (_isGameOver || (mainMenuPanel != null && mainMenuPanel.activeSelf)) return;
 
+            // PRIORITÉ 2 : Si les options sont ouvertes, Echap sert de "Retour" vers la Pause
             if (optionsPanel != null && optionsPanel.activeSelf)
             {
                 SetPanelActive(optionsPanel, false);
+                return; // On a géré l'action, on arrête là
+            }
+
+            // PRIORITÉ 3 : Si l'inventaire est ouvert, Echap le ferme (Comportement ergonomique standard)
+            // Cela empêche aussi la superposition Pause + Inventaire
+            if (inventoryPanel != null && inventoryPanel.activeSelf)
+            {
+                SetPanelActive(inventoryPanel, false);
+                SetMenuState(false, false); // Retour au jeu
                 return;
             }
 
+            // SINON : On bascule le menu Pause normalement
             bool isActive = !pausePanel.activeSelf;
             SetPanelActive(pausePanel, isActive);
 
-            HandleCursorAndTimescale(isActive);
+            // Pause = Temps figé (true)
+            SetMenuState(isActive, true);
         }
 
         private void ToggleInventory()
         {
-            // Interdit d'ouvrir l'inventaire si on est dans le menu principal
-            if (mainMenuPanel != null && mainMenuPanel.activeSelf) return;
+            // PRIORITÉ 1 : Si Game Over ou Menu Principal, interdit.
+            if (_isGameOver || (mainMenuPanel != null && mainMenuPanel.activeSelf)) return;
 
-            if ((pausePanel != null && pausePanel.activeSelf) || (gameOverPanel != null && gameOverPanel.activeSelf))
+            // PRIORITÉ 2 : Si le jeu est en Pause (Menu Pause ou Options), interdit d'ouvrir l'inventaire par dessus.
+            if ((pausePanel != null && pausePanel.activeSelf) || (optionsPanel != null && optionsPanel.activeSelf))
                 return;
 
+            // SINON : On bascule l'inventaire
             bool isActive = !inventoryPanel.activeSelf;
             SetPanelActive(inventoryPanel, isActive);
 
-            HandleCursorAndTimescale(isActive);
+            // Inventaire = Temps réel (false)
+            SetMenuState(isActive, false);
         }
 
         #endregion
 
         #region Public Methods
 
-        public void OpenOptions()
-        {
-            SetPanelActive(optionsPanel, true);
-        }
-
-        public void CloseOptions()
-        {
-            SetPanelActive(optionsPanel, false);
-        }
+        public void OpenOptions() => SetPanelActive(optionsPanel, true);
+        public void CloseOptions() => SetPanelActive(optionsPanel, false);
 
         #endregion
 
@@ -175,10 +164,7 @@ namespace MyLibrary.Modules.UI
 
         private void SetPanelActive(GameObject panel, bool isActive)
         {
-            if (panel != null)
-            {
-                panel.SetActive(isActive);
-            }
+            if (panel != null) panel.SetActive(isActive);
         }
 
         private void CloseAllPanels()
@@ -189,13 +175,13 @@ namespace MyLibrary.Modules.UI
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
         }
 
-        private void HandleCursorAndTimescale(bool isMenuOpen)
+        private void SetMenuState(bool isMenuOpen, bool freezeTime)
         {
             if (isMenuOpen)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
-                Time.timeScale = 0f;
+                Time.timeScale = freezeTime ? 0f : 1f;
             }
             else
             {

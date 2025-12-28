@@ -15,11 +15,21 @@ namespace MyLibrary.Modules.Inventory
         public int damageBonus;
         public int defenseBonus;
 
+        public override string ActionName => "Équiper";
+        public override bool IsUsable => true;
+
         // On force le type à Equipment et le stack à 1
         private void Reset()
         {
             type = ItemType.Equipment;
             maxStackSize = 1;
+        }
+
+        public override bool Use(GameObject user)
+        {
+            Debug.Log($"Équipement de {itemName} sur {user.name}");
+            // TODO: Appeler le EquipmentSystem ici
+            return false;
         }
 
         #endregion

@@ -9,6 +9,12 @@ namespace MyLibrary.Modules.Inventory
     [CreateAssetMenu(fileName = "New Resource", menuName = "Inventory/Resource Item")]
     public class ResourceItemData : ItemData
     {
+        #region Specific Data
+
+        public override bool IsUsable => false;
+
+        #endregion
+
         #region Editor Logic
 
         // Configuration par défaut lors de la création de l'asset

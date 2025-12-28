@@ -13,6 +13,7 @@ namespace MyLibrary.Modules.Inventory
         Equipment,  // Arme, Armure (Non stackable, équipable)
         Quest       // Objet clé (Non jetable)
     }
+
     /// <summary>
     /// Classe de base abstraite pour toutes les définitions d'objets.
     /// Contient les métadonnées universelles (Nom, ID, Icone).
@@ -42,6 +43,30 @@ namespace MyLibrary.Modules.Inventory
         [Min(1)]
         public int maxStackSize = 1;
 
+        [Header("Visuel In-Game")]
+        [Tooltip("Le Prefab 3D instancié lorsque l'objet est jeté au sol.")]
+        public GameObject dropPrefab;
+
+        #endregion
+
+        #region UI Properties
+
+        /// <summary>
+        /// Texte à afficher sur le bouton d'action (ex: "Utiliser", "Équiper").
+        /// </summary>
+        public virtual string ActionName => "Utiliser";
+
+        /// <summary>
+        /// Définit si le bouton d'action doit être visible/actif pour cet objet.
+        /// </summary>
+        public virtual bool IsUsable => true;
+
+        /// <summary>
+        /// Définit si le bouton "Jeter" doit être visible pour cet objet.
+        /// Par défaut, tous les objets sont jetables.
+        /// </summary>
+        public virtual bool IsDroppable => true;
+
         #endregion
 
         #region Editor Logic
@@ -53,6 +78,21 @@ namespace MyLibrary.Modules.Inventory
             {
                 id = Guid.NewGuid().ToString();
             }
+        }
+
+        #endregion
+
+        #region Logic
+
+        /// <summary>
+        /// Méthode appelée lorsque l'objet est utilisé depuis l'inventaire.
+        /// Retourne true si l'objet doit être consommé (quantité -1).
+        /// </summary>
+        public virtual bool Use(GameObject user)
+        {
+            Debug.Log($"Utilisation de l'item : {itemName}");
+            // Par défaut, un item générique ne fait rien et n'est pas consommé
+            return false;
         }
 
         #endregion
