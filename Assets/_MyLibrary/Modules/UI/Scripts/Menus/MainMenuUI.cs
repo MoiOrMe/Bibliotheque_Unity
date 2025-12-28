@@ -1,7 +1,7 @@
 using UnityEngine;
 using MyLibrary.Core;
 
-namespace MyLibrary.Modules.UI
+/**namespace MyLibrary.Modules.UI
 {
     public class MainMenuUI : MonoBehaviour
     {
@@ -46,4 +46,4 @@ namespace MyLibrary.Modules.UI
 
         #endregion
     }
-}
+}*/

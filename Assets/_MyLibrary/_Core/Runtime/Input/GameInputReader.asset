@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40f27f4031d126c4c955321336f708bc, type: 3}
+  m_Name: GameInputReader
+  m_EditorClassIdentifier: 
+  moveReference: {fileID: -740760704723202008, guid: b25bdfc7f888d0442bb8608339fdd003, type: 3}
+  lookReference: {fileID: 4185382945085515590, guid: b25bdfc7f888d0442bb8608339fdd003, type: 3}
+  jumpReference: {fileID: -4160807090489522044, guid: b25bdfc7f888d0442bb8608339fdd003, type: 3}
+  sprintReference: {fileID: 1197011650444043850, guid: b25bdfc7f888d0442bb8608339fdd003, type: 3}
+  interactReference: {fileID: 6552844026735614033, guid: b25bdfc7f888d0442bb8608339fdd003, type: 3}
+  pauseReference: {fileID: -2390102267912939107, guid: b25bdfc7f888d0442bb8608339fdd003, type: 3}
+  inventoryReference: {fileID: -7456056382285448045, guid: b25bdfc7f888d0442bb8608339fdd003, type: 3}
