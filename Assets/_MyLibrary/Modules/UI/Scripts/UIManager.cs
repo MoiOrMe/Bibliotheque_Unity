@@ -12,6 +12,10 @@ namespace MyLibrary.Modules.UI
         public GameObject mainMenuPanel;
         public string mainMenuSceneName = "Menu_Hub";
 
+        [Header("Layer : HUD")]
+        [Tooltip("Le panel contenant la barre de vie, munitions, minimap, etc.")]
+        public GameObject hudPanel;
+
         [Header("Layer : Windows")]
         public GameObject inventoryPanel;
         public GameObject pausePanel;
@@ -59,30 +63,20 @@ namespace MyLibrary.Modules.UI
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // 1. Reset des états logiques
             _isGameOver = false;
-
-            // 2. Nettoyage visuel IMPÉRATIF : On ferme tout (Inventaire, Pause, GameOver...)
-            // C'est cette ligne qui manquait pour le cas "Rejouer"
             CloseAllPanels();
 
             bool isMainMenu = scene.name == mainMenuSceneName;
 
-            // 3. Gestion spécifique Menu Principal
-            if (mainMenuPanel != null)
-            {
-                mainMenuPanel.SetActive(isMainMenu);
-            }
+            if (mainMenuPanel != null) mainMenuPanel.SetActive(isMainMenu);
 
-            // 4. Configuration Curseur & Temps
             if (isMainMenu)
             {
-                SetMenuState(true, false);
+                SetMenuState(true, false); // Menu Principal -> HUD Caché (via SetMenuState)
             }
             else
             {
-                // En jeu : On verrouille le curseur et on s'assure que le temps s'écoule
-                SetMenuState(false, false);
+                SetMenuState(false, false); // En jeu -> HUD Visible
             }
         }
 
@@ -92,17 +86,14 @@ namespace MyLibrary.Modules.UI
 
         private void OnPlayerDied()
         {
-            // 1. On active le verrou de priorité absolue
             _isGameOver = true;
-
-            // 2. On ferme tout ce qui pourrait gêner
             CloseAllPanels();
 
-            // 3. On affiche le Game Over
-            SetPanelActive(gameOverPanel, true);
+            // On cache le HUD quand on meurt pour laisser place au Game Over
+            if (hudPanel != null) hudPanel.SetActive(false);
 
-            // 4. On gère le curseur
-            SetMenuState(true, true); // (Optionnel : true/true pour figer le temps si voulu)
+            SetPanelActive(gameOverPanel, true);
+            SetMenuState(true, true);
         }
 
         private void TogglePauseMenu()
@@ -177,6 +168,12 @@ namespace MyLibrary.Modules.UI
 
         private void SetMenuState(bool isMenuOpen, bool freezeTime)
         {
+            if (hudPanel != null)
+            {
+                if (_isGameOver) hudPanel.SetActive(false);
+                else hudPanel.SetActive(!isMenuOpen);
+            }
+
             if (isMenuOpen)
             {
                 Cursor.lockState = CursorLockMode.None;

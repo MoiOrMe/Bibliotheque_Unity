@@ -1,3 +1,4 @@
+using MyLibrary.Modules.Stats;
 using UnityEngine;
 
 namespace MyLibrary.Modules.Inventory
@@ -22,11 +23,30 @@ namespace MyLibrary.Modules.Inventory
             maxStackSize = 10;
         }
 
-        public override bool Use(GameObject user)
+        public override bool Use(GameObject target)
         {
-            Debug.Log($"Le joueur boit {itemName} et récupère {healthRestoreAmount} PV !");
+            // On vérifie si la cible a un système de santé
+            CharacterHealth healthSystem = target.GetComponent<CharacterHealth>();
 
-            return true;
+            if (healthSystem != null)
+            {
+                // On applique le soin
+                if (healthRestoreAmount > 0)
+                {
+                    // Si la vie est déjà pleine, on ne consomme pas la potion (optionnel)
+                    if (healthSystem.health.currentValue >= healthSystem.health.maxValue)
+                    {
+                        Debug.Log("Vie déjà au max !");
+                        return false;
+                    }
+
+                    healthSystem.Heal(healthRestoreAmount);
+                    Debug.Log($"Potion utilisée : +{healthRestoreAmount} PV");
+                    return true; // L'item a été utilisé et doit être retiré
+                }
+            }
+
+            return false; // Pas d'effet, on ne retire pas l'item
         }
 
         #endregion
