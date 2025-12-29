@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.Iso.RTS",
+    "rootNamespace": "MyLib.Iso.RTS",
+    "references": [
+        "MyLib.Core",
+        "MyLib.Isometric"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

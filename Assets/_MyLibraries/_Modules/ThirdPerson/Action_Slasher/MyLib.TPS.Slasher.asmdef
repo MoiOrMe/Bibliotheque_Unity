@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.TPS.Slasher",
+    "rootNamespace": "MyLib.TPS.Slasher",
+    "references": [
+        "MyLib.Core",
+        "MyLib.ThirdPerson"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

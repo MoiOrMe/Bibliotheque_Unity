@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.FPS.Horror",
+    "rootNamespace": "MyLib.FPS.Horror",
+    "references": [
+        "MyLib.Core",
+        "MyLib.FirstPerson"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

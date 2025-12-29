@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.TPS.Tactical",
+    "rootNamespace": "MyLib.TPS.Tactical",
+    "references": [
+        "MyLib.Core",
+        "MyLib.ThirdPerson"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

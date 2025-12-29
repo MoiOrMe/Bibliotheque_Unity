@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.Side.Metroidvania",
+    "rootNamespace": "MyLib.Side.Metroidvania",
+    "references": [
+        "MyLib.Core",
+        "MyLib.SideView"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
