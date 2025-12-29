@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.VR",
+    "rootNamespace": "MyLib.VR",
+    "references": [
+        "MyLib.Core",
+        "Unity.XR.Management"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

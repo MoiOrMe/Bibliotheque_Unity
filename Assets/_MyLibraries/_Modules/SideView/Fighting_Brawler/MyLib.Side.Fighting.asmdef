@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.Side.Fighting",
+    "rootNamespace": "MyLib.Side.Fighting",
+    "references": [
+        "MyLib.Core",
+        "MyLib.SideView"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

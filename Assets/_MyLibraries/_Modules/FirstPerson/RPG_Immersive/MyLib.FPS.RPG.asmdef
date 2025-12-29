@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.FPS.RPG",
+    "rootNamespace": "MyLib.FPS.RPG",
+    "references": [
+        "MyLib.Core",
+        "MyLib.FirstPerson"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

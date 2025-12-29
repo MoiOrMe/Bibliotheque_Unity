@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_MyLibrary/_Core/Scenes/Boot.unity
+    path: Assets/_MyLibraries/_Core/Scenes/Boot.unity
     guid: bd608f38873ac2643b1e09109e3a6dc6
   - enabled: 1
     path: Assets/_Sandbox/Scenes/Menu_Hub.unity
@@ -25,4 +25,6 @@ EditorBuildSettings:
     guid: 814c383ec7a3bfb4692f093069ae0d2b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 95d49cabebd35514490f67c8e2d12b5e, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 1cc0929d29fd30a408f642104543083b, type: 2}
   m_UseUCBPForAssetBundles: 0

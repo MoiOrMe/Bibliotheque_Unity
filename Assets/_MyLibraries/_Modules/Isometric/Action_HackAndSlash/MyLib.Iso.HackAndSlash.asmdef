@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.Iso.HackAndSlash",
+    "rootNamespace": "MyLib.Iso.HackAndSlash",
+    "references": [
+        "MyLib.Core",
+        "MyLib.Isometric"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

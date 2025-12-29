@@ -1,0 +1,17 @@
+{
+    "name": "MyLib.FPS.Competitive",
+    "rootNamespace": "MyLib.FPS.Competitive",
+    "references": [
+        "MyLib.Core",
+        "MyLib.FirstPerson"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
