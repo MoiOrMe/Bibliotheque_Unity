@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_MyLibraries/_Core/Scenes/MainMenu.unity
     guid: 06be5e96856aa2f4b84d4925a957eabe
+  - enabled: 1
+    path: Assets/_MyLibraries/_Core/Scenes/ModuleSelector.unity
+    guid: 86f4bff4816cf4d48b40c864d011d458
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 95d49cabebd35514490f67c8e2d12b5e, type: 2}

@@ -48,18 +48,10 @@ namespace MyLib.Core.UI.Menus
         // Action du bouton "Modules" (Jouer).
         private void OnModulesClicked()
         {
-            // TODO: Créer la scène de sélection de modules plus tard.
-            // Pour l'instant, on affiche une notification si le système de notif est en place.
-            if (NotificationManager.Instance != null)
+            if (SceneLoader.Instance != null)
             {
-                NotificationManager.Instance.ShowNotification("Module Selector: Pas encore implémenté !");
+                SceneLoader.Instance.LoadScene(_moduleSelectionSceneName);
             }
-            else
-            {
-                Debug.Log("Click Modules: Scène non créée.");
-            }
-
-            // Exemple futur : SceneLoader.Instance.LoadScene(_moduleSelectionSceneName);
         }
 
         // Action du bouton "Options".
