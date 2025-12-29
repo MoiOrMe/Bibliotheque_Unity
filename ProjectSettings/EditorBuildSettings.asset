@@ -9,20 +9,8 @@ EditorBuildSettings:
     path: Assets/_MyLibraries/_Core/Scenes/Boot.unity
     guid: bd608f38873ac2643b1e09109e3a6dc6
   - enabled: 1
-    path: Assets/_Sandbox/Scenes/Menu_Hub.unity
-    guid: e054ffd6e4d33ff468b14adc1954e399
-  - enabled: 1
-    path: Assets/_Sandbox/Scenes/Demo_FPS.unity
-    guid: 111120e6dfc944948bac9d7cf6475988
-  - enabled: 1
-    path: Assets/_Sandbox/Scenes/Demo_SideView.unity
-    guid: 676b6672b1f18e84fa638bd62d09bc54
-  - enabled: 1
-    path: Assets/_Sandbox/Scenes/Demo_TPS_Combat.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
-    path: Assets/_Sandbox/Scenes/Demo_TPS_Explo.unity
-    guid: 814c383ec7a3bfb4692f093069ae0d2b
+    path: Assets/_MyLibraries/_Core/Scenes/MainMenu.unity
+    guid: 06be5e96856aa2f4b84d4925a957eabe
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 95d49cabebd35514490f67c8e2d12b5e, type: 2}

@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7085eeb5096986e4eb4c2b93009f204f, type: 3}
   m_Name: Language_FR
   m_EditorClassIdentifier: 
-  LanguageName: 
-  LanguageCode: 
+  LanguageName: "Fran\xE7ais"
+  LanguageCode: fr-FR
   Translations: []
