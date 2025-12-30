@@ -589,6 +589,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6348887443001987218, guid: bdc3870c4733f1741991fbc443ad9a5d, type: 3}
+      propertyPath: m_fontSize
+      value: 24
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348887443001987218, guid: bdc3870c4733f1741991fbc443ad9a5d, type: 3}
+      propertyPath: m_fontStyle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348887443001987218, guid: bdc3870c4733f1741991fbc443ad9a5d, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 24
+      objectReference: {fileID: 0}
     - target: {fileID: 9132297228191154907, guid: bdc3870c4733f1741991fbc443ad9a5d, type: 3}
       propertyPath: m_Name
       value: UI_Toast

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd07d32240dbd24f93a912b4f31cf82, type: 3}
+  m_Name: Data_AK47
+  m_EditorClassIdentifier: 
+  WeaponName: AK-47
+  Slot: 0
+  WeaponModelPrefab: {fileID: 3369678978475763032, guid: 14910a42ae76c8549be23b9b4682746d, type: 3}
+  PickupPrefab: {fileID: 8087625859196381679, guid: cf6f6b3f2eebe5f468c68700c39c80b1, type: 3}
+  ShootType: 0
+  BaseDamage: 30
+  FireRate: 600
+  Range: 100
+  MagazineSize: 30
+  ReloadTime: 2.5
+  FireSound: {fileID: 0}

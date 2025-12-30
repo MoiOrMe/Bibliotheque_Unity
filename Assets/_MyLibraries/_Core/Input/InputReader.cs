@@ -1,53 +1,68 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Nécessite le package Input System
+using UnityEngine.InputSystem;
 using UnityEngine.Events;
 
-// ScriptableObject agissant comme une couche d'abstraction pour les entrées joueur.
-// Implémente les interfaces générées par le Input System (IGameplayActions, IUIActions)
-// et transforme les callbacks techniques en événements Unity (UnityAction) faciles à utiliser.
+// Couche d'abstraction des entrées joueur (Pattern Observer & Polling).
+// Combine les événements (pour les actions ponctuelles comme le Saut) 
+// et les propriétés publiques (pour les actions continues comme le Mouvement et le Sprint)
+// afin de simplifier la vie des contrôleurs qui utiliseront ce script.
 
 namespace MyLib.Core.Input
 {
     [CreateAssetMenu(menuName = "MyLib/Input/Input Reader", fileName = "InputReader")]
     public class InputReader : ScriptableObject, GameControls.IGameplayActions, GameControls.IUIActions
     {
-        // --- Événements Gameplay ---
+        // --- Événements Gameplay (Pour actions ponctuelles) ---
         public event UnityAction<Vector2> MoveEvent;
         public event UnityAction<Vector2> LookEvent;
         public event UnityAction JumpEvent;
         public event UnityAction JumpCanceledEvent;
+        public event UnityAction SprintEvent;
+        public event UnityAction SprintCanceledEvent;
+        public event UnityAction CrouchEvent;
+        public event UnityAction CrouchCanceledEvent;
         public event UnityAction AttackEvent;
         public event UnityAction InteractEvent;
-        public event UnityAction PauseEvent;
+        
+        // --- Inventaire (FPSComp) ---
+        public event UnityAction EquipSlot1Event;
+        public event UnityAction EquipSlot2Event;
+        public event UnityAction EquipMeleeEvent;
+        public event UnityAction EquipGrenadeEvent;
+        public event UnityAction SwitchWeaponEvent;
+        public event UnityAction DropEvent;
 
         // --- Événements UI ---
         public event UnityAction ResumeEvent;
+        public event UnityAction PauseEvent;
 
-        private GameControls _gameControls; // Instance de la classe C# générée.
+        // --- Propriétés de Polling (Pour lecture continue) ---
+        // Permet de lire l'état actuel sans s'abonner aux événements.
+        public Vector2 MovementInput { get; private set; }
+        public Vector2 LookInput { get; private set; }
+        public bool IsSprinting { get; private set; }
+        public bool IsCrouching { get; private set; }
 
-        // Initialisation lors de l'activation du ScriptableObject.
-        // Crée l'instance des contrôles et définit ce script comme le gestionnaire des callbacks.
+        // Permet de savoir si le dernier input venait d'une souris
+        public bool IsMouseInput { get; private set; }
+
+        private GameControls _gameControls;
+
         private void OnEnable()
         {
             if (_gameControls == null)
             {
                 _gameControls = new GameControls();
-
-                // S'abonne aux interfaces définies dans le fichier .inputactions
                 _gameControls.Gameplay.SetCallbacks(this);
                 _gameControls.UI.SetCallbacks(this);
             }
-
-            EnableGameplayInput(); // Active le gameplay par défaut.
+            EnableGameplayInput();
         }
 
-        // Désactive les contrôles lorsque le ScriptableObject est déchargé.
         private void OnDisable()
         {
             DisableAllInput();
         }
-
-        // --- Gestion des Maps (Activation/Désactivation) ---
 
         public void EnableGameplayInput()
         {
@@ -67,22 +82,73 @@ namespace MyLib.Core.Input
             _gameControls.UI.Disable();
         }
 
-        // --- Callbacks Gameplay (Interface IGameplayActions) ---
+        // --- Callbacks Gameplay ---
 
+        /* Résumé de la méthode :
+        Callback du mouvement.
+        Stocke la valeur pour le polling et invoque l'événement.
+        */
         public void OnMove(InputAction.CallbackContext context)
         {
-            // Transmet la valeur du vecteur seulement si elle a changé.
-            MoveEvent?.Invoke(context.ReadValue<Vector2>());
+            Vector2 value = context.ReadValue<Vector2>();
+            MovementInput = value;
+            MoveEvent?.Invoke(value);
         }
 
+        /* Résumé de la méthode :
+        Callback du regard.
+        Détecte si le périphérique est une souris ou une manette. Stocke la valeur pour le polling et invoque l'événement.
+        */
         public void OnLook(InputAction.CallbackContext context)
         {
-            LookEvent?.Invoke(context.ReadValue<Vector2>());
+            Vector2 value = context.ReadValue<Vector2>();
+            LookInput = value;
+
+            // On vérifie la source de l'input
+            // Si le device est une souris, IsMouseInput devient true. Sinon (Gamepad), false.
+            IsMouseInput = context.control.device is Mouse;
+
+            LookEvent?.Invoke(value);
+        }
+
+        /* Résumé de la méthode :
+        Callback du Sprint.
+        Gère l'état booléen IsSprinting (Polling) et déclenche les événements correspondants.
+        */
+        public void OnSprint(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed)
+            {
+                IsSprinting = true;
+                SprintEvent?.Invoke();
+            }
+            else if (context.phase == InputActionPhase.Canceled)
+            {
+                IsSprinting = false;
+                SprintCanceledEvent?.Invoke();
+            }
+        }
+
+        /* Résumé de la méthode :
+        Callback du Crouch.
+        Gère l'état booléen IsCrouching (Polling) et déclenche les événements correspondants.
+        */
+        public void OnCrouch(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed)
+            {
+                IsCrouching = true;
+                CrouchEvent?.Invoke();
+            }
+            else if (context.phase == InputActionPhase.Canceled)
+            {
+                IsCrouching = false;
+                CrouchCanceledEvent?.Invoke();
+            }
         }
 
         public void OnJump(InputAction.CallbackContext context)
         {
-            // Distingue l'appui (Started/Performed) du relâchement (Canceled).
             if (context.phase == InputActionPhase.Performed)
                 JumpEvent?.Invoke();
             else if (context.phase == InputActionPhase.Canceled)
@@ -101,28 +167,63 @@ namespace MyLib.Core.Input
                 InteractEvent?.Invoke();
         }
 
+        public void OnDrop(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed)
+                DropEvent?.Invoke();
+        }
+
+        public void OnEquipSlot1(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed)
+                EquipSlot1Event?.Invoke();
+        }
+
+        public void OnEquipSlot2(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed)
+                EquipSlot2Event?.Invoke();
+        }
+
+        public void OnEquipMelee(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed)
+                EquipMeleeEvent?.Invoke();
+        }
+
+        public void OnEquipGrenade(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed)
+                EquipGrenadeEvent?.Invoke();
+        }
+
+        public void OnSwitchWeapon(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed)
+                SwitchWeaponEvent?.Invoke();
+        }
+
         public void OnPause(InputAction.CallbackContext context)
         {
             if (context.phase == InputActionPhase.Performed)
             {
                 PauseEvent?.Invoke();
-                EnableUIInput(); // Bascule automatiquement en mode UI à la pause.
+                EnableUIInput();
             }
         }
 
-        // --- Callbacks UI (Interface IUIActions) ---
+        // --- Callbacks UI ---
 
         public void OnResume(InputAction.CallbackContext context)
         {
             if (context.phase == InputActionPhase.Performed)
             {
                 ResumeEvent?.Invoke();
-                EnableGameplayInput(); // Bascule automatiquement en mode Gameplay à la reprise.
+                EnableGameplayInput();
             }
         }
 
-        // Note : D'autres méthodes UI (Navigate, Submit, Cancel) devraient être implémentées ici
-        // selon les besoins de votre fichier .inputactions, même si elles sont vides pour l'instant.
+        // Méthodes requises par l'interface mais non utilisées
         public void OnNavigate(InputAction.CallbackContext context) { }
         public void OnSubmit(InputAction.CallbackContext context) { }
         public void OnCancel(InputAction.CallbackContext context) { }

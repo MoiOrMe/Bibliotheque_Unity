@@ -14,6 +14,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_MyLibraries/_Core/Scenes/ModuleSelector.unity
     guid: 86f4bff4816cf4d48b40c864d011d458
+  - enabled: 1
+    path: Assets/_MyLibraries/_Modules/FirstPerson/Shooter_Competitive/Scenes/Demo_FP_Competitive.unity
+    guid: 7b4b2810e271c9f43870a2d76d5bd985
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 95d49cabebd35514490f67c8e2d12b5e, type: 2}

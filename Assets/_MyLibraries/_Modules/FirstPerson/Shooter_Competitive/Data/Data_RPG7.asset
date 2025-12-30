@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd07d32240dbd24f93a912b4f31cf82, type: 3}
+  m_Name: Data_RPG7
+  m_EditorClassIdentifier: 
+  WeaponName: RPG-7
+  Slot: 1
+  MaxStackSize: 1
+  WeaponModelPrefab: {fileID: 6759575898157177102, guid: f7ad449e01cfb3c41b5bedce15f15066, type: 3}
+  PickupPrefab: {fileID: 7468318041905055820, guid: 9add3b9b6675c7a45bc40cdde71b0d56, type: 3}
+  ShootType: 1
+  BaseDamage: 30
+  FireRate: 600
+  Range: 100
+  MagazineSize: 30
+  ReloadTime: 2.5
+  FireSound: {fileID: 0}
