@@ -14,13 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   WeaponName: Flash Grenade
   Slot: 3
-  MaxStackSize: 2
   WeaponModelPrefab: {fileID: 4925369573670291609, guid: a09f940969aff354fae2860946707503, type: 3}
   PickupPrefab: {fileID: 5331063142675887815, guid: 82dd7521d496bae45aaf7cd126ffba8f, type: 3}
   ShootType: 1
   BaseDamage: 30
   FireRate: 600
   Range: 100
-  MagazineSize: 30
+  MagazineSize: 2
+  MaxAmmoReserve: 90
   ReloadTime: 2.5
+  BaseSpread: 0
+  MovementSpread: 2
   FireSound: {fileID: 0}

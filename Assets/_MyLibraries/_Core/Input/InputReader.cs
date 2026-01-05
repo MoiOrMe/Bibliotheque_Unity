@@ -2,17 +2,15 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
 
-// Couche d'abstraction des entrées joueur (Pattern Observer & Polling).
-// Combine les événements (pour les actions ponctuelles comme le Saut) 
-// et les propriétés publiques (pour les actions continues comme le Mouvement et le Sprint)
-// afin de simplifier la vie des contrôleurs qui utiliseront ce script.
+// Couche d'abstraction (Wrapper) pour le New Input System d'Unity.
+// Transforme les callbacks complexes en événements C# simples et stocke les valeurs continues (Move/Look).
 
 namespace MyLib.Core.Input
 {
     [CreateAssetMenu(menuName = "MyLib/Input/Input Reader", fileName = "InputReader")]
     public class InputReader : ScriptableObject, GameControls.IGameplayActions, GameControls.IUIActions
     {
-        // --- Événements Gameplay (Pour actions ponctuelles) ---
+        #region Gameplay Events
         public event UnityAction<Vector2> MoveEvent;
         public event UnityAction<Vector2> LookEvent;
         public event UnityAction JumpEvent;
@@ -21,30 +19,34 @@ namespace MyLib.Core.Input
         public event UnityAction SprintCanceledEvent;
         public event UnityAction CrouchEvent;
         public event UnityAction CrouchCanceledEvent;
-        public event UnityAction AttackEvent;
+        public event UnityAction FireStartEvent;
+        public event UnityAction FireStopEvent;
         public event UnityAction InteractEvent;
-        
-        // --- Inventaire (FPSComp) ---
+        public event UnityAction ReloadEvent;
+        public event UnityAction SwitchFireModeEvent;
+
+        // Inventaire
         public event UnityAction EquipSlot1Event;
         public event UnityAction EquipSlot2Event;
         public event UnityAction EquipMeleeEvent;
         public event UnityAction EquipGrenadeEvent;
         public event UnityAction SwitchWeaponEvent;
         public event UnityAction DropEvent;
+        #endregion
 
-        // --- Événements UI ---
+        #region UI Events
         public event UnityAction ResumeEvent;
         public event UnityAction PauseEvent;
+        #endregion
 
-        // --- Propriétés de Polling (Pour lecture continue) ---
-        // Permet de lire l'état actuel sans s'abonner aux événements.
+        #region State Properties
         public Vector2 MovementInput { get; private set; }
         public Vector2 LookInput { get; private set; }
+        public bool IsFiring { get; private set; }
         public bool IsSprinting { get; private set; }
         public bool IsCrouching { get; private set; }
-
-        // Permet de savoir si le dernier input venait d'une souris
         public bool IsMouseInput { get; private set; }
+        #endregion
 
         private GameControls _gameControls;
 
@@ -82,11 +84,9 @@ namespace MyLib.Core.Input
             _gameControls.UI.Disable();
         }
 
-        // --- Callbacks Gameplay ---
-
+        #region Gameplay Callbacks
         /* Résumé de la méthode :
-        Callback du mouvement.
-        Stocke la valeur pour le polling et invoque l'événement.
+        Stocke le vecteur de mouvement pour le polling.
         */
         public void OnMove(InputAction.CallbackContext context)
         {
@@ -96,25 +96,16 @@ namespace MyLib.Core.Input
         }
 
         /* Résumé de la méthode :
-        Callback du regard.
-        Détecte si le périphérique est une souris ou une manette. Stocke la valeur pour le polling et invoque l'événement.
+        Stocke le vecteur de regard et détecte le type de périphérique (Souris/Gamepad).
         */
         public void OnLook(InputAction.CallbackContext context)
         {
             Vector2 value = context.ReadValue<Vector2>();
             LookInput = value;
-
-            // On vérifie la source de l'input
-            // Si le device est une souris, IsMouseInput devient true. Sinon (Gamepad), false.
             IsMouseInput = context.control.device is Mouse;
-
             LookEvent?.Invoke(value);
         }
 
-        /* Résumé de la méthode :
-        Callback du Sprint.
-        Gère l'état booléen IsSprinting (Polling) et déclenche les événements correspondants.
-        */
         public void OnSprint(InputAction.CallbackContext context)
         {
             if (context.phase == InputActionPhase.Performed)
@@ -129,10 +120,6 @@ namespace MyLib.Core.Input
             }
         }
 
-        /* Résumé de la méthode :
-        Callback du Crouch.
-        Gère l'état booléen IsCrouching (Polling) et déclenche les événements correspondants.
-        */
         public void OnCrouch(InputAction.CallbackContext context)
         {
             if (context.phase == InputActionPhase.Performed)
@@ -149,58 +136,67 @@ namespace MyLib.Core.Input
 
         public void OnJump(InputAction.CallbackContext context)
         {
-            if (context.phase == InputActionPhase.Performed)
-                JumpEvent?.Invoke();
-            else if (context.phase == InputActionPhase.Canceled)
-                JumpCanceledEvent?.Invoke();
+            if (context.phase == InputActionPhase.Performed) JumpEvent?.Invoke();
+            else if (context.phase == InputActionPhase.Canceled) JumpCanceledEvent?.Invoke();
         }
 
-        public void OnAttack(InputAction.CallbackContext context)
+        public void OnFire(InputAction.CallbackContext context)
         {
             if (context.phase == InputActionPhase.Performed)
-                AttackEvent?.Invoke();
+            {
+                IsFiring = true;
+                FireStartEvent?.Invoke();
+            }
+            else if (context.phase == InputActionPhase.Canceled)
+            {
+                IsFiring = false;
+                FireStopEvent?.Invoke();
+            }
+        }
+
+        public void OnReload(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed) ReloadEvent?.Invoke();
         }
 
         public void OnInteract(InputAction.CallbackContext context)
         {
-            if (context.phase == InputActionPhase.Performed)
-                InteractEvent?.Invoke();
+            if (context.phase == InputActionPhase.Performed) InteractEvent?.Invoke();
         }
 
         public void OnDrop(InputAction.CallbackContext context)
         {
-            if (context.phase == InputActionPhase.Performed)
-                DropEvent?.Invoke();
+            if (context.phase == InputActionPhase.Performed) DropEvent?.Invoke();
         }
 
         public void OnEquipSlot1(InputAction.CallbackContext context)
         {
-            if (context.phase == InputActionPhase.Performed)
-                EquipSlot1Event?.Invoke();
+            if (context.phase == InputActionPhase.Performed) EquipSlot1Event?.Invoke();
         }
 
         public void OnEquipSlot2(InputAction.CallbackContext context)
         {
-            if (context.phase == InputActionPhase.Performed)
-                EquipSlot2Event?.Invoke();
+            if (context.phase == InputActionPhase.Performed) EquipSlot2Event?.Invoke();
         }
 
         public void OnEquipMelee(InputAction.CallbackContext context)
         {
-            if (context.phase == InputActionPhase.Performed)
-                EquipMeleeEvent?.Invoke();
+            if (context.phase == InputActionPhase.Performed) EquipMeleeEvent?.Invoke();
         }
 
         public void OnEquipGrenade(InputAction.CallbackContext context)
         {
-            if (context.phase == InputActionPhase.Performed)
-                EquipGrenadeEvent?.Invoke();
+            if (context.phase == InputActionPhase.Performed) EquipGrenadeEvent?.Invoke();
         }
 
         public void OnSwitchWeapon(InputAction.CallbackContext context)
         {
-            if (context.phase == InputActionPhase.Performed)
-                SwitchWeaponEvent?.Invoke();
+            if (context.phase == InputActionPhase.Performed) SwitchWeaponEvent?.Invoke();
+        }
+
+        public void OnSwitchFireMode(InputAction.CallbackContext context)
+        {
+            if (context.phase == InputActionPhase.Performed) SwitchFireModeEvent?.Invoke();
         }
 
         public void OnPause(InputAction.CallbackContext context)
@@ -211,9 +207,9 @@ namespace MyLib.Core.Input
                 EnableUIInput();
             }
         }
+        #endregion
 
-        // --- Callbacks UI ---
-
+        #region UI Callbacks
         public void OnResume(InputAction.CallbackContext context)
         {
             if (context.phase == InputActionPhase.Performed)
@@ -223,7 +219,6 @@ namespace MyLib.Core.Input
             }
         }
 
-        // Méthodes requises par l'interface mais non utilisées
         public void OnNavigate(InputAction.CallbackContext context) { }
         public void OnSubmit(InputAction.CallbackContext context) { }
         public void OnCancel(InputAction.CallbackContext context) { }
@@ -234,5 +229,6 @@ namespace MyLib.Core.Input
         public void OnRightClick(InputAction.CallbackContext context) { }
         public void OnTrackedDevicePosition(InputAction.CallbackContext context) { }
         public void OnTrackedDeviceOrientation(InputAction.CallbackContext context) { }
+        #endregion
     }
 }

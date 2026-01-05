@@ -18,8 +18,73 @@ MonoBehaviour:
   PickupPrefab: {fileID: 1566805893683961752, guid: 4fc29c68144c42044a888a5b3ec48977, type: 3}
   ShootType: 0
   BaseDamage: 45
-  FireRate: 200
-  Range: 100
-  MagazineSize: 30
+  AvailableFireModes: 0100000002000000
+  BurstCount: 3
+  FireRate: 1000
+  Range: 1000
+  MagazineSize: 8
+  MaxAmmoReserve: 40
   ReloadTime: 2.5
+  BaseSpread: 0
+  MovementSpread: 10
+  VerticalRecoilCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.02192542
+      value: 0.016764015
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 2.5349782
+      value: 20.234467
+      inSlope: 5.0671597
+      outSlope: 5.0671597
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 8.033205
+      value: 40.8334
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  HorizontalRecoilCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 7.9975038
+      value: 0.22082193
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  RecoilSnappiness: 20
+  RecoilReturnSpeed: 5
+  RecoilResetTime: 0.7
   FireSound: {fileID: 0}

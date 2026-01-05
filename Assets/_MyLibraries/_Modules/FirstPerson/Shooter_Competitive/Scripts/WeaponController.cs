@@ -1,52 +1,91 @@
-// 1. Import des Packages
 using UnityEngine;
+using System.Collections;
 using MyLib.Core.Input;
 using MyLib.Modules.FirstPerson.Competitive.Data;
+using MyLib.Modules.FirstPerson.Common;
+using MyLib.Modules.Common;
 
-// 2. Description de ce que fera le script
-// Contrôleur d'armes complet gérant l'inventaire, l'affichage visuel, les interactions (Drop/Pickup)
-// et la logique de priorité d'équipement. Intègre la gestion des quantités (Stacks) pour les grenades.
+// Contrôleur principal de l'armement.
+// Centralise la gestion de l'inventaire (WeaponInstance), la logique de tir (Hitscan/Projectile),
+// l'application du recul procédural, les modes de tir (Auto/Semi/Burst) et le rechargement.
 
 namespace MyLib.Modules.FirstPerson.Competitive
 {
+    [RequireComponent(typeof(CharacterController))]
     public class WeaponController : MonoBehaviour
     {
+        #region References
         [Header("References")]
         [SerializeField] private InputReader _inputReader;
-
-        [Tooltip("Le transform parent où l'arme sera instanciée (généralement enfant de la caméra).")]
+        [Tooltip("Référence obligatoire pour l'application du recul visuel.")]
+        [SerializeField] private CameraHandler _cameraHandler;
         [SerializeField] private Transform _weaponHolder;
-
-        [Tooltip("Point d'apparition de l'arme lâchée (généralement devant le joueur).")]
         [SerializeField] private Transform _dropPoint;
+        [SerializeField] private Transform _cameraTransform;
 
-        [Header("Loadout")]
-        [Tooltip("Arme Principale.")]
-        [SerializeField] private WeaponData _primaryWeapon;
+        [Header("Visuals")]
+        [SerializeField] private BulletTrail _bulletTrailPrefab;
 
-        [Tooltip("Arme Secondaire.")]
-        [SerializeField] private WeaponData _secondaryWeapon;
+        [Header("Loadout (Data Initiales)")]
+        [SerializeField] private WeaponData _primaryData;
+        [SerializeField] private WeaponData _secondaryData;
+        [SerializeField] private WeaponData _meleeData;
+        [SerializeField] private WeaponData _grenadeData;
+        #endregion
 
-        [Tooltip("Arme de Mêlée (Couteau).")]
-        [SerializeField] private WeaponData _meleeWeapon;
+        #region Internal State
+        // Inventaire (Instances Persistantes)
+        private WeaponInstance _primaryInstance;
+        private WeaponInstance _secondaryInstance;
+        private WeaponInstance _meleeInstance;
+        private WeaponInstance _grenadeInstance;
 
-        [Tooltip("Equipement Tactique (Grenades).")]
-        [SerializeField] private WeaponData _grenadeWeapon;
+        // État Actif
+        private WeaponInstance _activeWeapon;
+        private GameObject _activeModel;
+        private Transform _activeMuzzlePoint;
 
-        // État interne
-        private int _currentSlotIndex = -1; // -1 indique qu'aucune arme n'est équipée
+        private int _currentSlotIndex = -1;
         private int _lastFirearmIndex = 1;
-        private int _currentGrenadeCount = 0;
 
-        private GameObject _currentWeaponModel;
-        private WeaponData _currentWeaponData;
+        // Logique de Tir & Recul
+        private bool _isReloading = false;
+        private float _nextFireTime = 0f;
 
+        private int _currentBurstCount = 0;
+        private Vector2 _previousRecoilPattern;
+        private float _lastFireTime;
+
+        // Modes de Tir
+        private bool _triggerReleased = true;
+        private bool _isBursting = false;
+
+        private CharacterController _characterController;
+        #endregion
+
+        #region Public Accessors
+        // Vérifie si un rechargement est nécessaire et possible pour l'UI ou les interactions.
+        public bool NeedsReload => _activeWeapon != null &&
+                                   _activeWeapon.CurrentMagazine < _activeWeapon.Data.MagazineSize &&
+                                   _activeWeapon.CurrentReserve > 0;
+        #endregion
+
+        #region Unity Lifecycle
         /* Résumé de la méthode :
-        Initialise les abonnements aux événements d'Input et configure l'état de départ.
-        Définit le point de drop par défaut et charge l'arme la plus prioritaire.
+        Initialise les composants, la caméra et convertit les WeaponData en instances persistantes.
+        Abonne les méthodes internes aux événements de l'InputReader.
         */
         private void Start()
         {
+            _characterController = GetComponent<CharacterController>();
+            if (_cameraTransform == null && Camera.main != null) _cameraTransform = Camera.main.transform;
+
+            // Instanciation des données persistantes
+            if (_primaryData != null) _primaryInstance = new WeaponInstance(_primaryData);
+            if (_secondaryData != null) _secondaryInstance = new WeaponInstance(_secondaryData);
+            if (_meleeData != null) _meleeInstance = new WeaponInstance(_meleeData);
+            if (_grenadeData != null) _grenadeInstance = new WeaponInstance(_grenadeData);
+
             if (_inputReader != null)
             {
                 _inputReader.EquipSlot1Event += EquipPrimary;
@@ -55,18 +94,17 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 _inputReader.EquipGrenadeEvent += EquipGrenade;
                 _inputReader.SwitchWeaponEvent += ToggleWeapon;
                 _inputReader.DropEvent += OnDropInput;
+                _inputReader.ReloadEvent += OnReloadInput;
+                _inputReader.SwitchFireModeEvent += OnSwitchModeInput;
             }
 
             if (_dropPoint == null) _dropPoint = transform;
-
-            // Initialise le compteur de grenades si une arme est présente dans le loadout.
-            if (_grenadeWeapon != null) _currentGrenadeCount = _grenadeWeapon.MaxStackSize;
 
             EquipBestStartingWeapon();
         }
 
         /* Résumé de la méthode :
-        Désabonne les méthodes des événements de l'InputReader pour éviter les fuites de mémoire.
+        Désabonne les événements lors de la destruction pour éviter les fuites de mémoire.
         */
         private void OnDestroy()
         {
@@ -78,252 +116,505 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 _inputReader.EquipGrenadeEvent -= EquipGrenade;
                 _inputReader.SwitchWeaponEvent -= ToggleWeapon;
                 _inputReader.DropEvent -= OnDropInput;
+                _inputReader.ReloadEvent -= OnReloadInput;
+                _inputReader.SwitchFireModeEvent -= OnSwitchModeInput;
             }
         }
 
-        // --- Logique d'Interaction (Drop / Pickup) ---
-
         /* Résumé de la méthode :
-        Exécuté lors de l'appui sur la touche de lâcher d'arme (ex: G).
-        Gère le retrait de l'arme de l'inventaire et son instanciation physique dans le monde.
-        Empêche le lâcher du couteau et gère la décrémentation des stacks pour les grenades.
+        Boucle principale gérant la logique de tir, le reset du recul et l'état de la caméra.
         */
-        private void OnDropInput()
+        private void Update()
         {
-            // Interdit l'action si c'est le couteau (Slot 3) ou si les mains sont vides.
-            if (_currentSlotIndex == 3 || _currentSlotIndex == -1) return;
+            HandleShooting();
+            HandleRecoilReset();
+            UpdateRecoilRecoveryState();
+        }
+        #endregion
 
-            WeaponData dataToDrop = null;
-            int amountToDrop = 1;
+        #region Shooting Logic
+        /* Résumé de la méthode :
+        Vérifie les conditions de tir (Input, Munitions, États) et redirige vers la logique appropriée (Grenade ou Arme à feu).
+        Gère le verrouillage de la gâchette pour les modes Semi-Auto.
+        */
+        private void HandleShooting()
+        {
+            if (_isReloading || _activeWeapon == null || _isBursting) return;
 
-            // Identification de l'arme à lâcher selon le slot actif.
-            if (_currentSlotIndex == 1) { dataToDrop = _primaryWeapon; _primaryWeapon = null; }
-            else if (_currentSlotIndex == 2) { dataToDrop = _secondaryWeapon; _secondaryWeapon = null; }
-            else if (_currentSlotIndex == 4)
+            // Gestion de l'état de la gâchette
+            if (!_inputReader.IsFiring)
             {
-                dataToDrop = _grenadeWeapon;
-                _currentGrenadeCount--;
-
-                // Si il reste des grenades en stock, on lâche l'objet sans retirer l'arme de l'inventaire.
-                if (_currentGrenadeCount > 0)
-                {
-                    DropWeaponPhysics(dataToDrop, 1);
-                    return;
-                }
-                else
-                {
-                    _grenadeWeapon = null; // Inventaire vide, suppression de la référence.
-                }
+                _triggerReleased = true;
+                return;
             }
 
-            if (dataToDrop != null)
+            // Slot 4 : Grenade
+            if (_currentSlotIndex == 4)
             {
-                DropWeaponPhysics(dataToDrop, amountToDrop);
+                if (Time.time >= _nextFireTime)
+                {
+                    _nextFireTime = Time.time + (60f / _activeWeapon.Data.FireRate);
+                    ThrowGrenade();
+                }
+                return;
+            }
 
-                if (_currentWeaponModel != null) Destroy(_currentWeaponModel);
+            // Slot 3 : Couteau (Pas de tir via cette méthode pour l'instant)
+            if (_currentSlotIndex == 3) return;
 
+            // Slots 1 & 2 : Armes à feu
+            if (_activeWeapon.CurrentMagazine > 0)
+            {
+                if (Time.time >= _nextFireTime)
+                {
+                    HandleFireMode();
+                }
+            }
+            else
+            {
+                // Rechargement automatique si gâchette pressée à vide
+                if (_triggerReleased) StartReload();
+            }
+        }
+
+        /* Résumé de la méthode :
+        Applique la logique de cadence de tir selon le mode sélectionné (Auto, Semi, Burst).
+        */
+        private void HandleFireMode()
+        {
+            FireMode mode = _activeWeapon.CurrentFireMode;
+
+            if (mode == FireMode.Auto)
+            {
+                ShootOnce();
+                _nextFireTime = Time.time + (60f / _activeWeapon.Data.FireRate);
+            }
+            else if (mode == FireMode.Semi)
+            {
+                if (_triggerReleased)
+                {
+                    ShootOnce();
+                    _triggerReleased = false; // Verrouille le tir jusqu'au relâchement
+                    _nextFireTime = Time.time + (60f / _activeWeapon.Data.FireRate);
+                }
+            }
+            else if (mode == FireMode.Burst)
+            {
+                if (_triggerReleased)
+                {
+                    _triggerReleased = false;
+                    StartCoroutine(BurstRoutine());
+                }
+            }
+        }
+
+        /* Résumé de la méthode :
+        Exécute une rafale de tirs. Vérifie les munitions à chaque itération.
+        */
+        private IEnumerator BurstRoutine()
+        {
+            _isBursting = true;
+
+            int burstCount = _activeWeapon.Data.BurstCount;
+            float delayBetweenShots = 60f / _activeWeapon.Data.FireRate;
+
+            for (int i = 0; i < burstCount; i++)
+            {
+                // Vérification stricte des munitions avant chaque balle de la rafale
+                if (_activeWeapon.CurrentMagazine <= 0) break;
+
+                ShootOnce();
+                yield return new WaitForSeconds(delayBetweenShots);
+            }
+
+            // Délai de récupération après la rafale
+            _nextFireTime = Time.time + (delayBetweenShots * 1.5f);
+            _isBursting = false;
+        }
+
+        /* Résumé de la méthode :
+        Gère l'action de tir unique : décrémentation, recul, mise à jour des timers, raycast et audio.
+        */
+        private void ShootOnce()
+        {
+            _activeWeapon.CurrentMagazine--;
+
+            ApplyRecoil();
+            _currentBurstCount++;
+            _lastFireTime = Time.time;
+
+            // TODO : Déclencher ici l'événement UI pour mettre à jour le compteur de munitions
+            // TODO : Déclencher l'animation de tir (Animator Trigger)
+            // TODO : Instancier le VFX Muzzle Flash au _activeMuzzlePoint
+
+            if (_activeWeapon.Data.ShootType == WeaponShootType.Hitscan)
+            {
+                PerformHitscanFire();
+            }
+            // else if Projectile...
+
+            if (_activeWeapon.Data.FireSound != null)
+            {
+                AudioSource.PlayClipAtPoint(_activeWeapon.Data.FireSound, transform.position);
+            }
+        }
+
+        /* Résumé de la méthode :
+        Effectue le Raycast balistique avec application de la dispersion (Spread).
+        */
+        private void PerformHitscanFire()
+        {
+            Vector3 shootDirection = _cameraTransform.forward;
+            shootDirection = CalculateSpreadDirection(shootDirection);
+
+            Ray ray = new Ray(_cameraTransform.position, shootDirection);
+            RaycastHit hit;
+            Vector3 hitPoint;
+
+            if (Physics.Raycast(ray, out hit, _activeWeapon.Data.Range))
+            {
+                hitPoint = hit.point;
+
+                // TODO : Intégrer l'interface IDamageable ici pour infliger des dégâts
+                DebugTarget target = hit.collider.GetComponent<DebugTarget>();
+                if (target != null) target.OnHit();
+
+                // TODO : Appeler un SurfaceManager pour instancier le bon decal/particle selon le tag/matériau touché
+
+                Debug.Log($"<color=red>HIT:</color> Touched {hit.collider.name}");
+            }
+            else
+            {
+                hitPoint = ray.origin + (ray.direction * _activeWeapon.Data.Range);
+            }
+
+            // Feedback visuel du trajet de la balle
+            Vector3 trailOrigin;
+            if (_activeMuzzlePoint != null) trailOrigin = _activeMuzzlePoint.position;
+            else trailOrigin = _activeModel != null ? _activeModel.transform.position : _weaponHolder.position;
+
+            if (_bulletTrailPrefab != null)
+            {
+                BulletTrail trail = Instantiate(_bulletTrailPrefab, trailOrigin, Quaternion.identity);
+                trail.Setup(trailOrigin, hitPoint);
+            }
+        }
+
+        /* Résumé de la méthode :
+        Calcule un vecteur de direction aléatoire dans un cône défini par la vitesse du joueur.
+        */
+        private Vector3 CalculateSpreadDirection(Vector3 baseDirection)
+        {
+            // Utilisation de sqrMagnitude pour optimiser les performances (évite racine carrée)
+            float inputIntensity = Mathf.Clamp01(_inputReader.MovementInput.sqrMagnitude);
+            float currentSpreadAngle = _activeWeapon.Data.BaseSpread + (_activeWeapon.Data.MovementSpread * inputIntensity);
+
+            if (currentSpreadAngle <= 0.01f) return baseDirection;
+
+            Vector2 randomSpread = Random.insideUnitCircle * currentSpreadAngle;
+            return _cameraTransform.rotation * Quaternion.Euler(randomSpread.x, randomSpread.y, 0f) * Vector3.forward;
+        }
+        #endregion
+
+        #region Recoil Logic
+        /* Résumé de la méthode :
+        Calcule la différence de recul entre le tir actuel et le précédent pour l'envoyer au gestionnaire de caméra.
+        */
+        private void ApplyRecoil()
+        {
+            if (_cameraHandler == null) return;
+
+            // Évaluation des courbes à la position actuelle de la rafale
+            float verticalTotal = _activeWeapon.Data.VerticalRecoilCurve.Evaluate(_currentBurstCount);
+            float horizontalTotal = _activeWeapon.Data.HorizontalRecoilCurve.Evaluate(_currentBurstCount);
+            Vector2 currentPattern = new Vector2(verticalTotal, horizontalTotal);
+
+            // Calcul du Delta (Ce qu'il faut ajouter par rapport à la frame précédente)
+            Vector2 recoilDelta = currentPattern - _previousRecoilPattern;
+            _previousRecoilPattern = currentPattern;
+
+            _cameraHandler.AddRecoil(
+                recoilDelta,
+                _activeWeapon.Data.RecoilSnappiness,
+                _activeWeapon.Data.RecoilReturnSpeed
+            );
+        }
+
+        /* Résumé de la méthode :
+        Réinitialise le pattern de recul si le joueur cesse de tirer pendant une durée définie par RecoilResetTime.
+        */
+        private void HandleRecoilReset()
+        {
+            if (_activeWeapon == null) return;
+
+            if (Time.time > _lastFireTime + _activeWeapon.Data.RecoilResetTime)
+            {
+                ResetRecoilState();
+            }
+        }
+
+        /* Résumé de la méthode :
+        Remet à zéro les compteurs internes de recul.
+        */
+        private void ResetRecoilState()
+        {
+            _currentBurstCount = 0;
+            _previousRecoilPattern = Vector2.zero;
+        }
+
+        /* Résumé de la méthode :
+        Communique avec le CameraHandler pour autoriser ou bloquer le recentrage automatique de la vue.
+        */
+        private void UpdateRecoilRecoveryState()
+        {
+            if (_cameraHandler == null) return;
+
+            // Détermine si une action de tir est activement en cours
+            bool isActuallyShooting = (_inputReader.IsFiring || _isBursting)
+                                      && _activeWeapon != null
+                                      && _activeWeapon.CurrentMagazine > 0
+                                      && !_isReloading
+                                      && _currentSlotIndex != 3;
+
+            _cameraHandler.SetRecoveryState(!isActuallyShooting);
+        }
+        #endregion
+
+        #region Grenade Logic
+        /* Résumé de la méthode :
+        Gère l'utilisation des grenades, la consommation de stack et le retour à l'arme précédente.
+        */
+        private void ThrowGrenade()
+        {
+            _activeWeapon.CurrentMagazine--;
+            Debug.Log($"<color=orange>GRENADE:</color> Thrown! Remaining: {_activeWeapon.CurrentMagazine}");
+
+            // TODO : Instancier le prefab physique de la grenade (Projectile logic)
+            // TODO : Jouer l'animation de lancer
+
+            if (_activeWeapon.CurrentMagazine <= 0)
+            {
+                _grenadeInstance = null;
+                if (_activeModel != null) Destroy(_activeModel);
+                _activeWeapon = null;
                 _currentSlotIndex = -1;
-                _currentWeaponData = null;
 
-                // Tente de rééquiper une arme disponible immédiatement après le drop.
-                EquipBestStartingWeapon();
+                // Retour intelligent à la dernière arme utilisée
+                if (_lastFirearmIndex == 1 && _primaryInstance != null) EquipPrimary();
+                else if (_secondaryInstance != null) EquipSecondary();
+                else EquipBestStartingWeapon();
             }
         }
+        #endregion
+
+        #region Reload Logic
+        private void OnReloadInput() { StartReload(); }
 
         /* Résumé de la méthode :
-        Point d'entrée pour ramasser un objet au sol.
-        Redirige vers la logique spécifique (Standard ou Grenade) selon le type d'objet.
+        Vérifie les conditions et lance la procédure de rechargement.
         */
-        public bool PickupWeapon(WeaponPickup pickup)
+        private void StartReload()
         {
-            if (pickup == null) return false;
+            if (_isReloading || _activeWeapon == null || _currentSlotIndex > 2) return;
+            if (_activeWeapon.CurrentMagazine >= _activeWeapon.Data.MagazineSize) return;
+            if (_activeWeapon.CurrentReserve <= 0) return;
 
-            // Récupération des données via le getter public du script WeaponPickup.
-            WeaponData newWeaponData = pickup.Data;
-
-            if (newWeaponData == null) return false;
-
-            int targetSlot = GetSlotIndex(newWeaponData.Slot);
-
-            if (targetSlot == 4)
+            // Interruption immédiate d'une rafale en cours
+            if (_isBursting)
             {
-                HandleGrenadePickup(newWeaponData, pickup);
-            }
-            else
-            {
-                HandleStandardPickup(newWeaponData, targetSlot);
-                Destroy(pickup.gameObject); // Destruction immédiate de l'objet au sol pour les armes standards.
+                StopAllCoroutines();
+                _isBursting = false;
             }
 
-            return true;
+            StartCoroutine(ReloadCoroutine());
         }
 
         /* Résumé de la méthode :
-        Gère le ramassage des armes uniques (Slots 1, 2, 3).
-        Lâche l'arme existante si le slot est occupé et équipe la nouvelle.
+        Gère le délai de rechargement et le transfert mathématique des munitions.
         */
-        private void HandleStandardPickup(WeaponData newData, int slot)
+        private IEnumerator ReloadCoroutine()
         {
-            WeaponData weaponToDrop = null;
-            if (slot == 1) weaponToDrop = _primaryWeapon;
-            else if (slot == 2) weaponToDrop = _secondaryWeapon;
+            _isReloading = true;
+            ResetRecoilState();
 
-            // Lâche physiquement l'arme actuelle avant de la remplacer.
-            if (weaponToDrop != null) DropWeaponPhysics(weaponToDrop, 1);
+            // TODO : Déclencher l'animation de rechargement
+            // TODO : Jouer le son de rechargement
 
-            if (slot == 1) _primaryWeapon = newData;
-            else if (slot == 2) _secondaryWeapon = newData;
-            else if (slot == 3) _meleeWeapon = newData;
+            Debug.Log("<color=yellow>RELOAD:</color> Reloading...");
+            yield return new WaitForSeconds(_activeWeapon.Data.ReloadTime);
 
-            EquipWeapon(newData, slot);
+            int ammoMissing = _activeWeapon.Data.MagazineSize - _activeWeapon.CurrentMagazine;
+            int ammoToTake = Mathf.Min(ammoMissing, _activeWeapon.CurrentReserve);
 
-            // Met à jour la mémoire de la dernière arme à feu si pertinent.
-            if (slot == 1 || slot == 2) _lastFirearmIndex = slot;
+            _activeWeapon.CurrentMagazine += ammoToTake;
+            _activeWeapon.CurrentReserve -= ammoToTake;
+
+            // TODO : Mettre à jour l'UI des munitions
+
+            Debug.Log($"<color=yellow>RELOAD:</color> Done.");
+            _isReloading = false;
         }
+        #endregion
 
+        #region Equipment Logic
         /* Résumé de la méthode :
-        Gère le ramassage des objets empilables (Grenades).
-        Complète le stack actuel si le type correspond, ou remplace l'inventaire si différent.
-        */
-        private void HandleGrenadePickup(WeaponData newData, WeaponPickup pickupSource)
-        {
-            // Cas où on possède déjà ce type de grenade.
-            if (_grenadeWeapon == newData)
-            {
-                int spaceLeft = _grenadeWeapon.MaxStackSize - _currentGrenadeCount;
-
-                if (spaceLeft > 0)
-                {
-                    // Calcule le montant transféré du sol vers l'inventaire sans dépasser le max.
-                    int amountToTake = Mathf.Min(spaceLeft, pickupSource.StackSize);
-
-                    _currentGrenadeCount += amountToTake;
-                    pickupSource.StackSize -= amountToTake;
-
-                    // Gestion de l'objet au sol : destruction ou mise à jour de l'affichage.
-                    if (pickupSource.StackSize <= 0) Destroy(pickupSource.gameObject);
-                    else pickupSource.UpdatePrompt();
-
-                    if (_currentSlotIndex == 4) EquipWeapon(_grenadeWeapon, 4);
-                }
-            }
-            // Cas où on change de type de grenade ou que le slot est vide.
-            else
-            {
-                // Lâche les anciennes grenades s'il y en a.
-                if (_grenadeWeapon != null && _currentGrenadeCount > 0)
-                {
-                    DropWeaponPhysics(_grenadeWeapon, _currentGrenadeCount);
-                }
-
-                _grenadeWeapon = newData;
-
-                // Prend le maximum possible depuis le stack au sol.
-                int amountToTake = Mathf.Min(newData.MaxStackSize, pickupSource.StackSize);
-                _currentGrenadeCount = amountToTake;
-
-                pickupSource.StackSize -= amountToTake;
-
-                if (pickupSource.StackSize <= 0) Destroy(pickupSource.gameObject);
-                else pickupSource.UpdatePrompt();
-
-                EquipWeapon(_grenadeWeapon, 4);
-            }
-        }
-
-        /* Résumé de la méthode :
-        Instancie le prefab physique de l'arme au sol et lui applique une force de projection.
-        Met à jour la quantité contenue dans l'objet au sol via son script WeaponPickup.
-        */
-        private void DropWeaponPhysics(WeaponData data, int amount)
-        {
-            if (data.PickupPrefab == null) return;
-
-            GameObject droppedItem = Instantiate(data.PickupPrefab, _dropPoint.position, _dropPoint.rotation);
-
-            WeaponPickup pickupScript = droppedItem.GetComponent<WeaponPickup>();
-            if (pickupScript != null)
-            {
-                pickupScript.StackSize = amount;
-                pickupScript.UpdatePrompt();
-            }
-
-            Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                // Applique une impulsion vers l'avant et une rotation aléatoire pour le réalisme.
-                rb.AddForce(_dropPoint.forward * 3f + Vector3.up * 1.5f, ForceMode.Impulse);
-                rb.AddTorque(Random.insideUnitSphere * 5f, ForceMode.Impulse);
-            }
-        }
-
-        // --- Logique d'Équipement ---
-
-        /* Résumé de la méthode :
-        Parcourt les slots dans l'ordre de priorité (1 > 2 > 3 > 4) pour équiper la première arme disponible au démarrage.
+        Sélectionne automatiquement la meilleure arme disponible lors de l'initialisation ou après un drop.
         */
         private void EquipBestStartingWeapon()
         {
-            if (_primaryWeapon != null) { EquipPrimary(); return; }
-            if (_secondaryWeapon != null) { EquipSecondary(); return; }
-            if (_meleeWeapon != null) { EquipMelee(); return; }
-            if (_grenadeWeapon != null) { EquipGrenade(); return; }
+            if (_primaryInstance != null) { EquipPrimary(); return; }
+            if (_secondaryInstance != null) { EquipSecondary(); return; }
+            if (_meleeInstance != null) { EquipMelee(); return; }
+            if (_grenadeInstance != null) { EquipGrenade(); return; }
         }
 
-        private void EquipPrimary() { if (_currentSlotIndex == 1 || _primaryWeapon == null) return; EquipWeapon(_primaryWeapon, 1); _lastFirearmIndex = 1; }
-        private void EquipSecondary() { if (_currentSlotIndex == 2 || _secondaryWeapon == null) return; EquipWeapon(_secondaryWeapon, 2); _lastFirearmIndex = 2; }
-        private void EquipMelee() { if (_currentSlotIndex == 3 || _meleeWeapon == null) return; EquipWeapon(_meleeWeapon, 3); }
-        private void EquipGrenade() { if (_currentSlotIndex == 4 || _grenadeWeapon == null) return; EquipWeapon(_grenadeWeapon, 4); }
+        private void EquipPrimary() { if (_currentSlotIndex == 1 || _primaryInstance == null) return; EquipWeapon(_primaryInstance, 1); _lastFirearmIndex = 1; }
+        private void EquipSecondary() { if (_currentSlotIndex == 2 || _secondaryInstance == null) return; EquipWeapon(_secondaryInstance, 2); _lastFirearmIndex = 2; }
+        private void EquipMelee() { if (_currentSlotIndex == 3 || _meleeInstance == null) return; EquipWeapon(_meleeInstance, 3); }
+        private void EquipGrenade() { if (_currentSlotIndex == 4 || _grenadeInstance == null) return; EquipWeapon(_grenadeInstance, 4); }
 
         /* Résumé de la méthode :
-        Gère l'instanciation visuelle de l'arme.
-        Détruit le modèle précédent et crée le nouveau en tant qu'enfant du WeaponHolder.
+        Active une instance d'arme, instancie son modèle visuel et réinitialise les états de combat.
         */
-        private void EquipWeapon(WeaponData weaponData, int slotIndex)
+        private void EquipWeapon(WeaponInstance weaponInstance, int slotIndex)
         {
+            // Arrêt de toutes les actions en cours
+            StopAllCoroutines();
+            _isReloading = false;
+            _isBursting = false;
+
             _currentSlotIndex = slotIndex;
-            _currentWeaponData = weaponData;
+            _activeWeapon = weaponInstance;
 
-            if (_currentWeaponModel != null) Destroy(_currentWeaponModel);
+            ResetRecoilState();
 
-            if (weaponData.WeaponModelPrefab != null && _weaponHolder != null)
+            if (_activeModel != null) Destroy(_activeModel);
+
+            // Instanciation du modèle visuel
+            if (weaponInstance.Data.WeaponModelPrefab != null && _weaponHolder != null)
             {
-                _currentWeaponModel = Instantiate(weaponData.WeaponModelPrefab, _weaponHolder);
-                _currentWeaponModel.transform.localPosition = Vector3.zero;
-                _currentWeaponModel.transform.localRotation = Quaternion.identity;
+                _activeModel = Instantiate(weaponInstance.Data.WeaponModelPrefab, _weaponHolder);
+                _activeModel.transform.localPosition = Vector3.zero;
+                _activeModel.transform.localRotation = Quaternion.identity;
+
+                // Recherche du point de tir
+                Transform foundMuzzle = _activeModel.transform.Find("MuzzlePoint");
+                if (foundMuzzle != null) _activeMuzzlePoint = foundMuzzle;
+                else _activeMuzzlePoint = _activeModel.transform;
             }
 
-            Debug.Log($"<color=cyan>WEAPON:</color> Equipped {weaponData.WeaponName}");
+            // TODO : Jouer le son d'équipement (Deploy sound)
+            // TODO : Lancer l'animation d'équipement
+
+            Debug.Log($"<color=cyan>WEAPON:</color> Equipped {weaponInstance.Data.WeaponName}.");
         }
 
-        /* Résumé de la méthode :
-        Bascule entre l'arme principale et secondaire.
-        Si l'arme actuelle est le couteau ou la grenade, renvoie vers la dernière arme à feu utilisée.
-        */
         private void ToggleWeapon()
         {
             if (_currentSlotIndex == 3 || _currentSlotIndex == 4)
             {
-                if (_lastFirearmIndex == 1 && _primaryWeapon != null) EquipPrimary();
-                else if (_secondaryWeapon != null) EquipSecondary();
-                else if (_primaryWeapon != null) EquipPrimary();
+                if (_lastFirearmIndex == 1 && _primaryInstance != null) EquipPrimary();
+                else if (_secondaryInstance != null) EquipSecondary();
+                else if (_primaryInstance != null) EquipPrimary();
             }
             else
             {
-                if (_currentSlotIndex == 1)
-                {
-                    if (_secondaryWeapon != null) EquipSecondary();
-                }
-                else
-                {
-                    if (_primaryWeapon != null) EquipPrimary();
-                }
+                if (_currentSlotIndex == 1) { if (_secondaryInstance != null) EquipSecondary(); }
+                else { if (_primaryInstance != null) EquipPrimary(); }
             }
         }
 
         /* Résumé de la méthode :
-        Convertit l'Enum WeaponSlot en index entier pour la logique interne.
+        Change le mode de tir de l'arme active.
         */
+        private void OnSwitchModeInput()
+        {
+            if (_activeWeapon != null && !_isReloading && !_isBursting && _currentSlotIndex <= 2)
+            {
+                _activeWeapon.CycleFireMode();
+                // TODO : Mettre à jour l'UI du mode de tir
+            }
+        }
+        #endregion
+
+        #region Interaction (Drop/Pickup)
+        private void OnDropInput()
+        {
+            if (_currentSlotIndex == 3 || _currentSlotIndex == -1) return;
+
+            WeaponData dataToDrop = null;
+            if (_currentSlotIndex == 1) { dataToDrop = _primaryInstance.Data; _primaryInstance = null; }
+            else if (_currentSlotIndex == 2) { dataToDrop = _secondaryInstance.Data; _secondaryInstance = null; }
+            else if (_currentSlotIndex == 4) { dataToDrop = _grenadeInstance.Data; _grenadeInstance = null; }
+
+            if (dataToDrop != null)
+            {
+                StopAllCoroutines();
+                _isReloading = false;
+                _isBursting = false;
+
+                DropWeaponPhysics(dataToDrop);
+                if (_activeModel != null) Destroy(_activeModel);
+                _currentSlotIndex = -1;
+                _activeWeapon = null;
+                EquipBestStartingWeapon();
+
+                // TODO : Update UI Inventaire
+            }
+        }
+
+        public bool PickupWeapon(WeaponPickup pickup)
+        {
+            if (pickup == null) return false;
+            WeaponData newData = pickup.Data;
+            if (newData == null) return false;
+
+            int targetSlot = GetSlotIndex(newData.Slot);
+            WeaponInstance newInstance = new WeaponInstance(newData);
+
+            if (targetSlot == 4) HandleGrenadePickup(newInstance, pickup);
+            else { HandleStandardPickup(newInstance, targetSlot); Destroy(pickup.gameObject); }
+            return true;
+        }
+
+        private void HandleStandardPickup(WeaponInstance newInstance, int slot)
+        {
+            if (slot == 1 && _primaryInstance != null) DropWeaponPhysics(_primaryInstance.Data);
+            else if (slot == 2 && _secondaryInstance != null) DropWeaponPhysics(_secondaryInstance.Data);
+
+            if (slot == 1) _primaryInstance = newInstance;
+            else if (slot == 2) _secondaryInstance = newInstance;
+            else if (slot == 3) _meleeInstance = newInstance;
+
+            EquipWeapon(newInstance, slot);
+            if (slot == 1 || slot == 2) _lastFirearmIndex = slot;
+
+            // TODO : Update UI Inventaire
+        }
+
+        private void HandleGrenadePickup(WeaponInstance newInstance, WeaponPickup pickupSource)
+        {
+            if (_grenadeInstance != null) DropWeaponPhysics(_grenadeInstance.Data);
+            _grenadeInstance = newInstance;
+            Destroy(pickupSource.gameObject);
+            EquipWeapon(_grenadeInstance, 4);
+            // TODO : Update UI Inventaire
+        }
+
+        private void DropWeaponPhysics(WeaponData data)
+        {
+            if (data.PickupPrefab == null) return;
+            GameObject droppedItem = Instantiate(data.PickupPrefab, _dropPoint.position, _dropPoint.rotation);
+            Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.AddForce(_dropPoint.forward * 3f + Vector3.up * 1.5f, ForceMode.Impulse);
+                rb.AddTorque(Random.insideUnitSphere * 5f, ForceMode.Impulse);
+            }
+        }
+        #endregion
+
+        #region Helpers
         private int GetSlotIndex(WeaponSlot slot)
         {
             switch (slot)
@@ -335,5 +626,6 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 default: return 0;
             }
         }
+        #endregion
     }
 }

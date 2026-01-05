@@ -14,13 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   WeaponName: Frag Grenade
   Slot: 3
-  MaxStackSize: 2
   WeaponModelPrefab: {fileID: 2142265043605360292, guid: 25455081f5b8bee439ad360aac63dc44, type: 3}
   PickupPrefab: {fileID: 8111123061613260836, guid: 8d53cc870c8976748934352586bc0ad2, type: 3}
   ShootType: 1
   BaseDamage: 30
   FireRate: 600
   Range: 100
-  MagazineSize: 30
+  MagazineSize: 2
+  MaxAmmoReserve: 90
   ReloadTime: 2.5
+  BaseSpread: 0
+  MovementSpread: 2
   FireSound: {fileID: 0}

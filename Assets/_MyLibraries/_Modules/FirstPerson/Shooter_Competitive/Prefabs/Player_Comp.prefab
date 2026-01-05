@@ -503,12 +503,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _inputReader: {fileID: 11400000, guid: 3fd4801ebae58074b842b6e3965b9848, type: 2}
+  _cameraHandler: {fileID: 5824520386256431459}
   _weaponHolder: {fileID: 5492887611575837835}
   _dropPoint: {fileID: 8172439280512540414}
-  _primaryWeapon: {fileID: 0}
-  _secondaryWeapon: {fileID: 0}
-  _meleeWeapon: {fileID: 11400000, guid: 01453a03364ef5b499093b2d22455d41, type: 2}
-  _grenadeWeapon: {fileID: 0}
+  _cameraTransform: {fileID: 1786595930125288598}
+  _bulletTrailPrefab: {fileID: 2291366177247301297, guid: 820db8500af324946868d929ef960f0c, type: 3}
+  _primaryData: {fileID: 0}
+  _secondaryData: {fileID: 0}
+  _meleeData: {fileID: 11400000, guid: 01453a03364ef5b499093b2d22455d41, type: 2}
+  _grenadeData: {fileID: 0}
 --- !u!1 &7172989451628814852
 GameObject:
   m_ObjectHideFlags: 0

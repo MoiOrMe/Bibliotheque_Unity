@@ -3,7 +3,8 @@
     "rootNamespace": "MyLib.FPS.Horror",
     "references": [
         "MyLib.Core",
-        "MyLib.FirstPerson"
+        "MyLib.FirstPerson",
+        "MyLib.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

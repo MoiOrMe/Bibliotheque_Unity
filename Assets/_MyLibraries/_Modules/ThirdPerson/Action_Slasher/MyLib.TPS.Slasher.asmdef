@@ -3,7 +3,8 @@
     "rootNamespace": "MyLib.TPS.Slasher",
     "references": [
         "MyLib.Core",
-        "MyLib.ThirdPerson"
+        "MyLib.ThirdPerson",
+        "MyLib.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

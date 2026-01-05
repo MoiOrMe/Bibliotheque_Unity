@@ -3,7 +3,8 @@
     "rootNamespace": "MyLib.VR",
     "references": [
         "MyLib.Core",
-        "Unity.XR.Management"
+        "Unity.XR.Management",
+        "MyLib.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

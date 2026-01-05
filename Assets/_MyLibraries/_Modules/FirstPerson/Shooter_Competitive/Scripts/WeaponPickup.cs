@@ -57,8 +57,6 @@ namespace MyLib.Modules.FirstPerson.Competitive
 
             if (weaponController != null && _weaponData != null)
             {
-                // On passe "this" (le script lui-même) au contrôleur pour qu'il puisse modifier le StackSize
-                // si le joueur ne ramasse pas tout.
                 weaponController.PickupWeapon(this);
             }
         }

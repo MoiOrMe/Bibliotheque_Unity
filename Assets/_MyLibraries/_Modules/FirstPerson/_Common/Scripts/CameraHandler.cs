@@ -1,47 +1,39 @@
-// 1. Import des Packages
 using UnityEngine;
 using MyLib.Core.Input;
-
-// 2. Description de ce que fera le script
-// Gère la rotation de la caméra (Look).
-// Permet de configurer la sensibilité X (Horizontale) et Y (Verticale) séparément,
-// et distingue toujours la Souris de la Manette pour un confort optimal.
 
 namespace MyLib.Modules.FirstPerson.Common
 {
     public class CameraHandler : MonoBehaviour
     {
+        #region References & Settings
         [Header("References")]
-        [Tooltip("Référence au ScriptableObject InputReader.")]
         [SerializeField] private InputReader _inputReader;
-        [Tooltip("Le Transform racine du joueur (pour tourner gauche/droite).")]
         [SerializeField] private Transform _playerBodyTransform;
-        [Tooltip("Le Transform pivot de la caméra (pour regarder haut/bas).")]
         [SerializeField] private Transform _cameraPivotTransform;
 
-        [Header("Mouse Settings")]
-        [Tooltip("Sensibilité Horizontale (Gauche/Droite) pour la souris.")]
+        [Header("Settings")]
         [SerializeField] private float _mouseSensitivityX = 1.0f;
-        [Tooltip("Sensibilité Verticale (Haut/Bas) pour la souris.")]
         [SerializeField] private float _mouseSensitivityY = 1.0f;
-
-        [Header("Gamepad Settings")]
-        [Tooltip("Sensibilité Horizontale pour la manette.")]
         [SerializeField] private float _gamepadSensitivityX = 150f;
-        [Tooltip("Sensibilité Verticale pour la manette.")]
         [SerializeField] private float _gamepadSensitivityY = 150f;
 
         [Header("Limits")]
-        [Tooltip("Angle maximum de regard vers le haut.")]
         [SerializeField] private float _upperLimit = 90f;
-        [Tooltip("Angle maximum de regard vers le bas.")]
         [SerializeField] private float _lowerLimit = 90f;
+        #endregion
 
+        #region Internal State
         private float _xRotation = 0f;
 
-        /* Résumé de la méthode :
-        Initialisation. Verrouille le curseur et récupère le transform du corps si manquant.
-        */
+        private Vector2 _targetRecoil;
+        private Vector2 _currentRecoil;
+
+        private float _recoilSnappiness;
+        private float _recoilReturnSpeed;
+        private bool _canRecover = true;
+        #endregion
+
+        #region Unity Lifecycle
         private void Start()
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -49,59 +41,79 @@ namespace MyLib.Modules.FirstPerson.Common
             if (_playerBodyTransform == null) _playerBodyTransform = transform;
         }
 
-        /* Résumé de la méthode :
-        Boucle de mise à jour de la caméra (LateUpdate pour éviter le jitter).
-        */
         private void LateUpdate()
         {
             HandleCameraRotation();
         }
+        #endregion
 
-        /* Résumé de la méthode :
-        Calcule et applique la rotation.
-        Choisit les bonnes sensibilités (X et Y) selon si l'input vient de la souris ou de la manette.
-        */
+        #region Rotation Logic
         private void HandleCameraRotation()
         {
             if (_inputReader == null) return;
 
             Vector2 lookInput = _inputReader.LookInput;
+            float sensitivityX = _inputReader.IsMouseInput ? _mouseSensitivityX : _gamepadSensitivityX * Time.deltaTime;
+            float sensitivityY = _inputReader.IsMouseInput ? _mouseSensitivityY : _gamepadSensitivityY * Time.deltaTime;
 
-            float sensitivityX;
-            float sensitivityY;
-
-            // Détection de la source (Souris ou Manette)
-            if (_inputReader.IsMouseInput)
-            {
-                // Pour la souris, on utilise les valeurs brutes (déjà en Delta)
-                sensitivityX = _mouseSensitivityX;
-                sensitivityY = _mouseSensitivityY;
-            }
-            else
-            {
-                // Pour la manette, on multiplie par Time.deltaTime pour une vitesse constante
-                sensitivityX = _gamepadSensitivityX * Time.deltaTime;
-                sensitivityY = _gamepadSensitivityY * Time.deltaTime;
-            }
-
-            // Calcul final avec axes séparés
             float mouseX = lookInput.x * sensitivityX;
             float mouseY = lookInput.y * sensitivityY;
 
-            // Rotation Horizontale (Corps) - Axe Y global
-            if (_playerBodyTransform != null)
+            if (mouseY < 0f && _targetRecoil.x > 0f)
             {
-                _playerBodyTransform.Rotate(Vector3.up * mouseX);
+                float inputMagnitude = Mathf.Abs(mouseY);
+                float recoilDebt = _targetRecoil.x;
+
+                if (inputMagnitude <= recoilDebt)
+                {
+                    _targetRecoil.x -= inputMagnitude;
+
+                    mouseY = 0f;
+                }
+                else
+                {
+                    _targetRecoil.x = 0f;
+
+                    mouseY += recoilDebt;
+                }
             }
 
-            // Rotation Verticale (Tête) - Axe X local
-            _xRotation -= mouseY; // On soustrait pour que "Haut" regarde en haut
+            _xRotation -= mouseY;
             _xRotation = Mathf.Clamp(_xRotation, -_upperLimit, _lowerLimit);
+
+            _currentRecoil = Vector2.Lerp(_currentRecoil, _targetRecoil, Time.deltaTime * _recoilSnappiness);
+
+            if (_canRecover)
+            {
+                _targetRecoil = Vector2.Lerp(_targetRecoil, Vector2.zero, Time.deltaTime * _recoilReturnSpeed);
+                if (_targetRecoil.sqrMagnitude < 0.01f) _targetRecoil = Vector2.zero;
+            }
+
+            if (_playerBodyTransform != null)
+                _playerBodyTransform.Rotate(Vector3.up * mouseX);
 
             if (_cameraPivotTransform != null)
             {
-                _cameraPivotTransform.localRotation = Quaternion.Euler(_xRotation, 0f, 0f);
+                Quaternion finalRotation = Quaternion.Euler(
+                    _xRotation - _currentRecoil.x,
+                    _currentRecoil.y,
+                    0f
+                );
+                _cameraPivotTransform.localRotation = finalRotation;
             }
         }
+
+        public void AddRecoil(Vector2 recoilToAdd, float snappiness, float returnSpeed)
+        {
+            _targetRecoil += recoilToAdd;
+            _recoilSnappiness = snappiness;
+            _recoilReturnSpeed = returnSpeed;
+        }
+
+        public void SetRecoveryState(bool allowed)
+        {
+            _canRecover = allowed;
+        }
+        #endregion
     }
 }

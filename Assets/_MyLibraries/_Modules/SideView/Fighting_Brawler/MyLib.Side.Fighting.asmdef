@@ -3,7 +3,8 @@
     "rootNamespace": "MyLib.Side.Fighting",
     "references": [
         "MyLib.Core",
-        "MyLib.SideView"
+        "MyLib.SideView",
+        "MyLib.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
