@@ -356,8 +356,11 @@ GameObject:
   m_Component:
   - component: {fileID: 8753913209876332436}
   - component: {fileID: 5697702083870525806}
+  - component: {fileID: 3015603112425384595}
   - component: {fileID: 4163172889570884986}
   - component: {fileID: 1248082859688010398}
+  - component: {fileID: 7485231380978298399}
+  - component: {fileID: 4794148154370902985}
   - component: {fileID: 5824520386256431459}
   - component: {fileID: 2953777363003564054}
   - component: {fileID: 8809457033333345374}
@@ -410,6 +413,18 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &3015603112425384595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6878889091020962373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ca95df9d7359bc49aaf6e8af8a29b0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &4163172889570884986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -435,20 +450,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1eda3fc098bec244d92b315c9bad0240, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isInputActive: 1
   _inputReader: {fileID: 11400000, guid: 3fd4801ebae58074b842b6e3965b9848, type: 2}
-  _cameraHolder: {fileID: 5951357489888300506}
   _walkSpeed: 5
   _sprintSpeed: 8
   _crouchSpeed: 2.5
   _acceleration: 30
   _deceleration: 80
-  _jumpHeight: 1.2
+--- !u!114 &7485231380978298399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6878889091020962373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c95213f59450214e85b5398cfc55f0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _gravity: -9.81
   _gravityMultiplier: 2
+  _stickToGroundForce: -2
+  _jumpHeight: 1.2
   _standingHeight: 2
   _crouchHeight: 1
   _crouchTransitionSpeed: 10
+  Velocity: {x: 0, y: 0, z: 0}
+--- !u!114 &4794148154370902985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6878889091020962373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a950eaac07ebe1942be662e415799825, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _cameraHolder: {fileID: 5951357489888300506}
   _standingEyeHeight: 1.6
   _crouchEyeHeight: 0.8
+  _transitionSpeed: 10
 --- !u!114 &5824520386256431459
 MonoBehaviour:
   m_ObjectHideFlags: 0

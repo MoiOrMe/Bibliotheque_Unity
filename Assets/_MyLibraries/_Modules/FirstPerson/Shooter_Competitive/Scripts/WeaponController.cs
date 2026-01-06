@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections;
 using MyLib.Core.Input;
-using MyLib.Modules.FirstPerson.Competitive.Data;
-using MyLib.Modules.FirstPerson.Common;
 using MyLib.Modules.Common;
+using MyLib.Modules.FirstPerson.Common;
+using MyLib.Modules.FirstPerson.Common.Components;
+using MyLib.Modules.FirstPerson.Competitive.Data;
 
 // Contrôleur principal de l'armement.
 // Centralise la gestion de l'inventaire (WeaponInstance), la logique de tir (Hitscan/Projectile),

@@ -1,7 +1,9 @@
 using UnityEngine;
 using MyLib.Core.Input;
 
-namespace MyLib.Modules.FirstPerson.Common
+// Gère la rotation de la caméra (Look), le recul procédural et la compensation souris.
+
+namespace MyLib.Modules.FirstPerson.Common.Components
 {
     public class CameraHandler : MonoBehaviour
     {
@@ -24,16 +26,13 @@ namespace MyLib.Modules.FirstPerson.Common
 
         #region Internal State
         private float _xRotation = 0f;
-
         private Vector2 _targetRecoil;
         private Vector2 _currentRecoil;
-
         private float _recoilSnappiness;
         private float _recoilReturnSpeed;
         private bool _canRecover = true;
         #endregion
 
-        #region Unity Lifecycle
         private void Start()
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -45,13 +44,15 @@ namespace MyLib.Modules.FirstPerson.Common
         {
             HandleCameraRotation();
         }
-        #endregion
 
-        #region Rotation Logic
+        /* Résumé de la méthode :
+        Calcule la rotation finale (Input + Recul - Compensation).
+        */
         private void HandleCameraRotation()
         {
             if (_inputReader == null) return;
 
+            // Input
             Vector2 lookInput = _inputReader.LookInput;
             float sensitivityX = _inputReader.IsMouseInput ? _mouseSensitivityX : _gamepadSensitivityX * Time.deltaTime;
             float sensitivityY = _inputReader.IsMouseInput ? _mouseSensitivityY : _gamepadSensitivityY * Time.deltaTime;
@@ -59,28 +60,29 @@ namespace MyLib.Modules.FirstPerson.Common
             float mouseX = lookInput.x * sensitivityX;
             float mouseY = lookInput.y * sensitivityY;
 
+            // Compensation Recul (Si on baisse la souris pendant le tir)
             if (mouseY < 0f && _targetRecoil.x > 0f)
             {
-                float inputMagnitude = Mathf.Abs(mouseY);
-                float recoilDebt = _targetRecoil.x;
+                float inputMag = Mathf.Abs(mouseY);
+                float debt = _targetRecoil.x;
 
-                if (inputMagnitude <= recoilDebt)
+                if (inputMag <= debt)
                 {
-                    _targetRecoil.x -= inputMagnitude;
-
-                    mouseY = 0f;
+                    _targetRecoil.x -= inputMag;
+                    mouseY = 0f; // On consomme l'input pour rembourser la dette
                 }
                 else
                 {
                     _targetRecoil.x = 0f;
-
-                    mouseY += recoilDebt;
+                    mouseY += debt; // On applique le reste
                 }
             }
 
+            // Application Rotation
             _xRotation -= mouseY;
             _xRotation = Mathf.Clamp(_xRotation, -_upperLimit, _lowerLimit);
 
+            // Lissage Recul
             _currentRecoil = Vector2.Lerp(_currentRecoil, _targetRecoil, Time.deltaTime * _recoilSnappiness);
 
             if (_canRecover)
@@ -89,17 +91,13 @@ namespace MyLib.Modules.FirstPerson.Common
                 if (_targetRecoil.sqrMagnitude < 0.01f) _targetRecoil = Vector2.zero;
             }
 
+            // Application sur Transform
             if (_playerBodyTransform != null)
                 _playerBodyTransform.Rotate(Vector3.up * mouseX);
 
             if (_cameraPivotTransform != null)
             {
-                Quaternion finalRotation = Quaternion.Euler(
-                    _xRotation - _currentRecoil.x,
-                    _currentRecoil.y,
-                    0f
-                );
-                _cameraPivotTransform.localRotation = finalRotation;
+                _cameraPivotTransform.localRotation = Quaternion.Euler(_xRotation - _currentRecoil.x, _currentRecoil.y, 0f);
             }
         }
 
@@ -114,6 +112,5 @@ namespace MyLib.Modules.FirstPerson.Common
         {
             _canRecover = allowed;
         }
-        #endregion
     }
 }

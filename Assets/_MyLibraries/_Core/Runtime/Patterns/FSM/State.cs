@@ -1,37 +1,31 @@
 using UnityEngine;
-using UnityEditorInternal;
 
-// Classe abstraite de base pour le pattern "Finite State Machine" (FSM).
-// Chaque �tat sp�cifique (ex: PlayerIdle, EnemyAttack) doit h�riter de cette classe
-// et impl�menter la logique d'entr�e, de mise � jour et de sortie.
+// Classe abstraite de base pour le pattern Finite State Machine (FSM).
+// Débarrassée des dépendances UnityEditor pour fonctionner au Runtime.
 
 namespace MyLib.Core.Patterns.FSM
 {
     public abstract class State
     {
-        protected UnityEditor.Animations.AnimatorStateMachine _stateMachine;
+        // Référence vers la machine qui possède cet état
+        protected StateMachine _stateMachine;
 
-        // Constructeur liant l'�tat � la machine qui le poss�de.
-        // Permet � l'�tat d'acc�der aux donn�es partag�es via la machine ou de demander un changement d'�tat.
-        protected State(UnityEditor.Animations.AnimatorStateMachine stateMachine)
+        // Constructeur
+        public State(StateMachine stateMachine)
         {
             _stateMachine = stateMachine;
         }
 
-        // M�thode appel�e une seule fois lors de l'entr�e dans l'�tat.
-        // Sert � initialiser les variables, lancer des animations ou jouer des sons.
+        // Méthode appelée une fois à l'entrée de l'état
         public virtual void Enter() { }
 
-        // M�thode appel�e � chaque frame (Update) tant que l'�tat est actif.
-        // Contient la logique principale (d�tection, inputs, timers).
+        // Méthode appelée à chaque frame (Update)
         public virtual void Tick() { }
 
-        // M�thode appel�e � chaque frame physique (FixedUpdate).
-        // Utilis�e pour les manipulations de Rigidbody (forces, v�locit�).
+        // Méthode appelée à chaque frame physique (FixedUpdate)
         public virtual void FixedTick() { }
 
-        // M�thode appel�e une seule fois lors de la sortie de l'�tat.
-        // Sert au nettoyage (arr�t d'animations, reset de variables).
+        // Méthode appelée une fois à la sortie de l'état
         public virtual void Exit() { }
     }
 }

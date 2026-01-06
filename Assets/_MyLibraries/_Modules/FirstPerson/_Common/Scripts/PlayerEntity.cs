@@ -1,17 +1,18 @@
 using UnityEngine;
 using MyLib.Core.BaseClasses;
 
+// Composant d'identité du joueur. 
+// Permet au joueur d'être reconnu comme une entité valide par le système d'interaction (IInteractable).
+// Doit être placé sur le même GameObject que le PlayerController (ou à la racine du Player).
+
 namespace MyLib.Modules.FirstPerson.Common
 {
-    // C'est la "Carte d'identité" du joueur. 
-    // Elle hérite de BaseEntity pour être compatible avec ton système d'interaction Core.
     public class PlayerEntity : BaseEntity
     {
-        // Pour l'instant, on n'a pas besoin de logique complexe ici.
-        // Le simple fait d'exister permet de satisfaire la signature Interact(BaseEntity interactor).
+        // TODO : Ajouter ici la gestion des Équipes (TeamID)
+        // TODO : Ajouter ici le lien vers l'Inventaire (InventoryManager)
 
-        // Plus tard, on mettra ici :
-        // public int TeamID;
-        // public InventoryManager Inventory;
+        // Note : Pas besoin de logique pour l'instant, l'héritage de BaseEntity suffit 
+        // pour que "interactor.GetComponent<BaseEntity>()" fonctionne dans les scripts d'interaction.
     }
 }

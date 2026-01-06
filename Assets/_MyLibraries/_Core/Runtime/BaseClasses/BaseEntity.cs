@@ -1,9 +1,8 @@
 using UnityEngine;
-using MyLib.Core.Attributes; // Nécessaire pour utiliser [ReadOnly] si on le souhaite
+using MyLib.Core.Attributes;
 
-// Classe de base représentant une entité générique dans le jeu.
-// Gère l'identification unique (ID), les initialisations communes et fournit des méthodes virtuelles
-// pour le cycle de vie spécifique aux entités (Spawn, Despawn, Tick).
+// Classe de base représentant une entité générique (Joueur, Ennemi, PNJ).
+// Gère l'identification unique (ID) et le cycle de vie (Spawn/Despawn).
 
 namespace MyLib.Core.BaseClasses
 {
@@ -13,32 +12,33 @@ namespace MyLib.Core.BaseClasses
         [Tooltip("Identifiant unique généré automatiquement ou défini manuellement.")]
         [SerializeField] protected string _entityID;
 
-        // Propriété publique en lecture seule pour accéder à l'ID de l'entité.
         public string EntityID => _entityID;
 
-        // Appelé lors de l'initialisation du script.
-        // Génère un ID unique si le champ est vide au démarrage.
+        /* Résumé de la méthode :
+        Génère un GUID unique si l'ID est vide au démarrage.
+        */
         protected virtual void Awake()
         {
             if (string.IsNullOrEmpty(_entityID))
             {
-                // Génère un identifiant unique universel (GUID) pour garantir l'unicité sans configuration manuelle.
                 _entityID = System.Guid.NewGuid().ToString();
             }
         }
 
-        // Méthode virtuelle appelée lors de l'activation ou de l'apparition de l'entité via un Pool.
-        // Doit être surchargée par les classes enfants pour réinitialiser l'état (PV, Position).
+        /* Résumé de la méthode :
+        Appelée lors de l'apparition (Compatible Object Pooling).
+        */
         public virtual void OnSpawn()
         {
-            // Logique par défaut vide, destinée à être étendue.
+            // TODO : Réinitialiser les PV ici quand le système de santé sera implémenté.
         }
 
-        // Méthode virtuelle appelée lors de la désactivation ou de la suppression de l'entité.
-        // Doit être surchargée pour nettoyer les événements ou remettre l'objet dans un Pool.
+        /* Résumé de la méthode :
+        Appelée lors de la disparition (Compatible Object Pooling).
+        */
         public virtual void OnDespawn()
         {
-            // Logique par défaut vide, destinée à être étendue.
+            // TODO : Nettoyer les effets de statut ou events.
         }
     }
 }

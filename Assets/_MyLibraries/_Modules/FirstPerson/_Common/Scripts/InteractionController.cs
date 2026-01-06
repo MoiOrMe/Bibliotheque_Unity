@@ -2,6 +2,7 @@ using UnityEngine;
 using MyLib.Core.Input;
 using MyLib.Core.BaseClasses;
 using MyLib.Modules.FirstPerson.UI;
+using MyLib.Core.Interfaces;
 
 // Gère la détection (Raycast) et l'interaction avec les objets BaseInteractable.
 // Met à jour l'interface utilisateur (HUD) pour afficher le nom de l'objet regardé.
