@@ -1,10 +1,9 @@
 using UnityEngine;
-using MyLib.Modules.FirstPerson.Competitive.Data;
 
 // Classe conteneur (non-MonoBehaviour) représentant une arme spécifique dans l'inventaire.
 // Stocke l'état dynamique (Munitions, Mode de tir) associé à un WeaponData.
 
-namespace MyLib.Modules.FirstPerson.Competitive
+namespace MyLib.Modules.Common.Data
 {
     [System.Serializable]
     public class WeaponInstance
@@ -46,8 +45,6 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 _fireModeIndex = 0;
             }
             CurrentFireMode = Data.AvailableFireModes[_fireModeIndex];
-
-            Debug.Log($"<color=green>MODE:</color> Switched to {CurrentFireMode}");
         }
     }
 }

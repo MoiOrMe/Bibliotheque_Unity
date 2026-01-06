@@ -15,10 +15,31 @@ MonoBehaviour:
   WeaponName: Couteau
   Slot: 2
   WeaponModelPrefab: {fileID: 5616911595306793133, guid: 7e56908178e51284db4887fd70c1860d, type: 3}
+  PickupPrefab: {fileID: 0}
   ShootType: 0
   BaseDamage: 30
+  AvailableFireModes: 00000000
+  BurstCount: 3
   FireRate: 600
   Range: 10
-  MagazineSize: 30
+  MagazineSize: 9999
+  MaxAmmoReserve: 90
   ReloadTime: 2.5
+  BaseSpread: 0
+  MovementSpread: 2
+  VerticalRecoilCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  HorizontalRecoilCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  RecoilSnappiness: 10
+  RecoilReturnSpeed: 5
+  RecoilResetTime: 0.3
   FireSound: {fileID: 0}

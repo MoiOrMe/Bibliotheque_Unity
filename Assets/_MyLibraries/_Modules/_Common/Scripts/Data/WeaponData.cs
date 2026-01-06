@@ -4,7 +4,7 @@ using UnityEngine;
 // ScriptableObject contenant toutes les données fixes d'une arme (Design, Stats, Audio, VFX).
 // Sert de modèle pour créer les instances en jeu.
 
-namespace MyLib.Modules.FirstPerson.Competitive.Data
+namespace MyLib.Modules.Common.Data
 {
     public enum WeaponShootType { Hitscan, Projectile }
     public enum FireMode { Auto, Semi, Burst }
@@ -36,7 +36,7 @@ namespace MyLib.Modules.FirstPerson.Competitive.Data
         public WeaponShootType ShootType;
 
         [Tooltip("Dégâts de base au corps.")]
-        public float BaseDamage = 30f;
+        public float Damage = 30f;
 
         [Tooltip("Liste des modes de tir disponibles. Le premier est le mode par défaut.")]
         public List<FireMode> AvailableFireModes = new List<FireMode> { FireMode.Auto };

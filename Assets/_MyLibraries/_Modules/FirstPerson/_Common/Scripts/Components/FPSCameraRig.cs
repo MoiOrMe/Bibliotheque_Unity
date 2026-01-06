@@ -51,6 +51,8 @@ namespace MyLib.Modules.FirstPerson.Common.Components
         */
         public Transform GetCameraTransform()
         {
+            // Si _cameraHolder est vide, on prend la main camera par sécurité
+            if (_cameraHolder == null) return Camera.main.transform;
             return _cameraHolder;
         }
     }

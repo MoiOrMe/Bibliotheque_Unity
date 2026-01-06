@@ -17,26 +17,17 @@ namespace MyLib.Modules.FirstPerson.States
             _fpsController = controller;
         }
 
-        /* Résumé de la méthode :
-        Appelée lors de l'activation de l'état. Prépare les effets visuels liés à la vitesse.
-        */
         public override void Enter()
         {
             // TODO : Changer le FOV de la caméra (Effet de vitesse)
             // TODO : Changer l'animation de l'arme (Weapon Bobbing plus intense)
         }
 
-        /* Résumé de la méthode :
-        Appelée lors de la sortie de l'état. Réinitialise les effets de caméra.
-        */
         public override void Exit()
         {
             // TODO : Reset FOV
         }
 
-        /* Résumé de la méthode :
-        Vérifie les transitions et exécute la logique de mouvement rapide.
-        */
         public override void Tick()
         {
             // Transition vers le Saut
@@ -65,7 +56,7 @@ namespace MyLib.Modules.FirstPerson.States
         }
 
         /* Résumé de la méthode :
-        Calcule la vélocité de sprint et met à jour le FPSMover.
+        Calcule la vélocité de sprint et l'envoie directement au FPSMover.
         */
         private void HandleSprintMovement()
         {
@@ -86,15 +77,17 @@ namespace MyLib.Modules.FirstPerson.States
             // Interpolation de la vélocité via Mover
             Vector3 currentHVel = new Vector3(_fpsController.Mover.Velocity.x, 0f, _fpsController.Mover.Velocity.z);
             Vector3 targetVel = desiredDir * targetSpeed;
+
+            // On utilise l'accélération pour atteindre la vitesse de sprint
             Vector3 newVel = Vector3.MoveTowards(currentHVel, targetVel, _fpsController.Acceleration * Time.deltaTime);
 
-            // Application de la gravité et du mouvement sur le Mover
+            // Application de la gravité (gérée par Mover sur Velocity.y)
             _fpsController.Mover.ApplyGravity();
 
-            _fpsController.Mover.Velocity.x = newVel.x;
-            _fpsController.Mover.Velocity.z = newVel.z;
-
-            _fpsController.Mover.Move(Vector3.zero);
+            // --- CORRECTION ICI ---
+            // On envoie le vecteur calculé (newVel) au lieu de Vector3.zero
+            // Le Mover va mettre à jour Velocity.x et Velocity.z avec ces valeurs.
+            _fpsController.Mover.Move(newVel);
         }
     }
 }

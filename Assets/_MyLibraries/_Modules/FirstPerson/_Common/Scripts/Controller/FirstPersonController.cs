@@ -29,6 +29,7 @@ namespace MyLib.Modules.FirstPerson.Common
         [SerializeField] private float _crouchSpeed = 2.5f;
         [SerializeField] private float _acceleration = 30f;
         [SerializeField] private float _deceleration = 80f;
+        [SerializeField] private float _airControlRate = 30f;
         #endregion
 
         #region Public Accessors
@@ -38,6 +39,7 @@ namespace MyLib.Modules.FirstPerson.Common
         public float CrouchSpeed => _crouchSpeed;
         public float Acceleration => _acceleration;
         public float Deceleration => _deceleration;
+        public float AirControlRate => _airControlRate;
 
         // États
         public FPSGroundedState GroundedState { get; private set; }

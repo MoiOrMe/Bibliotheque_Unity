@@ -1,8 +1,8 @@
 using UnityEngine;
 using TMPro;
 
-// Gère l'affichage contextuel du nom de l'objet interactif visé par le joueur.
-// Permet d'afficher ou de masquer le texte via des méthodes publiques appelées par le contrôleur.
+// Gère l'affichage contextuel (Canvas WorldSpace ou ScreenSpace) du nom de l'objet interactif.
+// Optimisé pour éviter les appels SetActive inutiles.
 
 namespace MyLib.Modules.FirstPerson.UI
 {
@@ -13,20 +13,19 @@ namespace MyLib.Modules.FirstPerson.UI
         [SerializeField] private TextMeshProUGUI _promptText;
 
         /* Résumé de la méthode :
-        Initialise l'UI en masquant le texte au démarrage pour éviter d'avoir un texte vide à l'écran.
+        Initialisation de l'état visuel au démarrage (caché par défaut).
         */
         private void Awake()
         {
             if (_promptText != null)
             {
-                _promptText.text = "";
+                _promptText.text = string.Empty;
                 _promptText.gameObject.SetActive(false);
             }
         }
 
         /* Résumé de la méthode :
-        Affiche le nom de l'objet interactif.
-        Active le GameObject du texte si ce n'était pas déjà fait.
+        Met à jour le texte et active l'élément UI si nécessaire.
         */
         public void ShowPrompt(string promptMessage)
         {
@@ -34,7 +33,6 @@ namespace MyLib.Modules.FirstPerson.UI
 
             _promptText.text = promptMessage;
 
-            // On active l'objet seulement s'il est éteint, pour éviter des appels inutiles.
             if (!_promptText.gameObject.activeSelf)
             {
                 _promptText.gameObject.SetActive(true);
@@ -42,8 +40,7 @@ namespace MyLib.Modules.FirstPerson.UI
         }
 
         /* Résumé de la méthode :
-        Masque le texte d'interaction.
-        Appelé lorsque le joueur ne regarde plus rien d'interactif.
+        Désactive l'élément UI si celui-ci est actuellement visible.
         */
         public void HidePrompt()
         {

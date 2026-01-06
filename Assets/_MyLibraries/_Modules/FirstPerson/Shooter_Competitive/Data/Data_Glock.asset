@@ -40,17 +40,17 @@ MonoBehaviour:
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 2.5349782
-      value: 20.234467
-      inSlope: 5.0671597
-      outSlope: 5.0671597
+      time: 1.0068831
+      value: 19.69855
+      inSlope: 0.29758692
+      outSlope: 0.29758692
       tangentMode: 136
       weightedMode: 0
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 8.033205
-      value: 40.8334
+      time: 2.9913359
+      value: 19.922726
       inSlope: 0
       outSlope: 0
       tangentMode: 136
@@ -86,5 +86,5 @@ MonoBehaviour:
     m_RotationOrder: 4
   RecoilSnappiness: 20
   RecoilReturnSpeed: 5
-  RecoilResetTime: 0.7
+  RecoilResetTime: 1.2
   FireSound: {fileID: 0}

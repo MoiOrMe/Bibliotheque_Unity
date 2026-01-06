@@ -43,8 +43,10 @@ GameObject:
   - component: {fileID: 7923702048797381183}
   - component: {fileID: 8121492261447637639}
   - component: {fileID: 4914730070682049234}
+  - component: {fileID: -5277068948985130289}
+  - component: {fileID: 5821537920802326255}
   m_Layer: 0
-  m_Name: Visual_Rifle
+  m_Name: Visual_AK47
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -140,3 +142,34 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-5277068948985130289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3369678978475763032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ca95df9d7359bc49aaf6e8af8a29b0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5821537920802326255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3369678978475763032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbe67c55bab507a46afba67993f858d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _muzzlePoint: {fileID: 4483479561656364773}
+  _data: {fileID: 11400000, guid: a5298e31e40c9dd4dbc86e103b2e78b0, type: 2}
+  _bulletTrailPrefab: {fileID: 9118270312565129609, guid: 820db8500af324946868d929ef960f0c, type: 3}
+  _impactVFX: {fileID: 0}
+  _hitLayerMask:
+    serializedVersion: 2
+    m_Bits: 128

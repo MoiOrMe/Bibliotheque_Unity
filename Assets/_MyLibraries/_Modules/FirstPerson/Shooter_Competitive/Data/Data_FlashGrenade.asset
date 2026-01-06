@@ -18,11 +18,28 @@ MonoBehaviour:
   PickupPrefab: {fileID: 5331063142675887815, guid: 82dd7521d496bae45aaf7cd126ffba8f, type: 3}
   ShootType: 1
   BaseDamage: 30
+  AvailableFireModes: 01000000
+  BurstCount: 3
   FireRate: 600
   Range: 100
-  MagazineSize: 2
-  MaxAmmoReserve: 90
+  MagazineSize: 0
+  MaxAmmoReserve: 2
   ReloadTime: 2.5
   BaseSpread: 0
   MovementSpread: 2
+  VerticalRecoilCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  HorizontalRecoilCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  RecoilSnappiness: 10
+  RecoilReturnSpeed: 5
+  RecoilResetTime: 0.3
   FireSound: {fileID: 0}

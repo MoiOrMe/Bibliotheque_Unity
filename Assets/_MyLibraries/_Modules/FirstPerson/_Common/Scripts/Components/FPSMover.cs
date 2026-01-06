@@ -57,13 +57,16 @@ namespace MyLib.Modules.FirstPerson.Common.Components
         }
 
         /* Résumé de la méthode :
-        Déplace le CharacterController en appliquant le mouvement désiré combiné à la vélocité verticale actuelle.
+        Applique le mouvement.
+        Correction : On sépare strictement la vélocité verticale (gérée par le Mover) 
+        de la vélocité horizontale (gérée par les States).
         */
-        public void Move(Vector3 motion)
+        public void Move(Vector3 desiredHorizontalVelocity)
         {
-            // Application du mouvement latéral + vertical (gravité/saut)
-            Vector3 finalMotion = motion + Velocity;
-            _charController.Move(finalMotion * Time.deltaTime);
+            Velocity.x = desiredHorizontalVelocity.x;
+            Velocity.z = desiredHorizontalVelocity.z;
+
+            _charController.Move(Velocity * Time.deltaTime);
         }
 
         /* Résumé de la méthode :

@@ -3,9 +3,6 @@ using MyLib.Core.Patterns.FSM;
 using MyLib.Modules.FirstPerson.Common;
 using MyLib.Modules.Common.States;
 
-// État actif lorsque le joueur est au sol.
-// Gère le déplacement (Marche/Sprint/Crouch), la friction et les transitions vers le saut ou la chute via le FPSMover.
-
 namespace MyLib.Modules.FirstPerson.States
 {
     public class FPSGroundedState : PlayerBaseState
@@ -32,7 +29,6 @@ namespace MyLib.Modules.FirstPerson.States
             }
 
             // Transition Chute
-            // Modification : Vérification via le Mover
             if (!_fpsController.Mover.IsGrounded)
             {
                 _stateMachine.ChangeState(_fpsController.AirState);
@@ -50,7 +46,7 @@ namespace MyLib.Modules.FirstPerson.States
         }
 
         /* Résumé de la méthode :
-        Calcule la vélocité horizontale et délègue l'application physique au composant Mover.
+        Calcule la vélocité horizontale et l'envoie directement au Mover.
         */
         private void HandleGroundMovement()
         {
@@ -71,27 +67,24 @@ namespace MyLib.Modules.FirstPerson.States
 
             Vector3 desiredDir = (forward * input.y + right * input.x).normalized;
 
-            // Accélération / Décélération (On lit la vélocité du Mover)
+            // Accélération / Décélération
             Vector3 currentHVel = new Vector3(_fpsController.Mover.Velocity.x, 0f, _fpsController.Mover.Velocity.z);
 
-            // Check si on change de direction (Counter-Strafe)
+            // Counter-Strafe logic
             bool isCountering = Vector3.Dot(currentHVel.normalized, desiredDir) < 0f && currentHVel.magnitude > 0.1f;
             float accel = (input == Vector2.zero || isCountering) ? _fpsController.Deceleration : _fpsController.Acceleration;
 
-            // Application
+            // Application de l'accélération
             Vector3 targetVel = desiredDir * targetSpeed;
             Vector3 newVel = Vector3.MoveTowards(currentHVel, targetVel, accel * Time.deltaTime);
 
             // Mise à jour du Mover
-            _fpsController.Mover.ApplyGravity(); // Applique la force de collage au sol
+            _fpsController.Mover.ApplyGravity(); // Applique la force de collage au sol sur Velocity.y
 
-            _fpsController.Mover.Velocity.x = newVel.x;
-            _fpsController.Mover.Velocity.z = newVel.z;
-
-            // On appelle Move avec Zero car le Mover applique déjà (Velocity * deltaTime)
-            _fpsController.Mover.Move(Vector3.zero);
-
-            // TODO : Gérer ici le Head Bobbing ou les bruits de pas (Footsteps)
+            // --- CORRECTION ICI ---
+            // On n'assigne plus manuellement Velocity.x/z ici, c'est le Move qui le fait.
+            // On envoie le vecteur calculé (newVel) au lieu de Vector3.zero
+            _fpsController.Mover.Move(newVel);
         }
     }
 }
