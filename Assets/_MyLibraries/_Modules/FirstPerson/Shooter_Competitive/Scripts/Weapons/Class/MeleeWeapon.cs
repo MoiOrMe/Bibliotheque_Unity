@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections;
-using MyLib.Modules.Common.Data;
 using MyLib.Core.Interfaces;
+using MyLib.Modules.Common.Data;
+using MyLib.Modules.FirstPerson.Common;
 
 // Implémentation spécifique pour les armes de corps-à-corps.
 // Gère l'animation, le délai d'impact (pour synchroniser avec le geste) 
@@ -9,7 +10,6 @@ using MyLib.Core.Interfaces;
 
 namespace MyLib.Modules.FirstPerson.Competitive.Weapons
 {
-    [RequireComponent(typeof(Animator))]
     public class MeleeWeapon : WeaponBehaviour
     {
         [Header("Melee Settings")]
@@ -40,7 +40,6 @@ namespace MyLib.Modules.FirstPerson.Competitive.Weapons
         public override void Initialize(WeaponInstance instance, WeaponController owner)
         {
             base.Initialize(instance, owner);
-            _animator = GetComponent<Animator>();
         }
 
         /* Résumé de la méthode :
@@ -49,9 +48,11 @@ namespace MyLib.Modules.FirstPerson.Competitive.Weapons
         */
         public override void PerformAttack()
         {
-            if (_animator != null)
+            var playerController = Owner.GetComponent<FirstPersonController>();
+
+            if (playerController != null && playerController.Visuals != null)
             {
-                _animator.SetTrigger(_animAttackTrigger);
+                playerController.Visuals.SetTrigger(_animAttackTrigger);
             }
 
             if (Instance.Data.FireSound != null)
@@ -69,6 +70,8 @@ namespace MyLib.Modules.FirstPerson.Competitive.Weapons
         private IEnumerator ProcessAttackDelay()
         {
             yield return new WaitForSeconds(_impactDelay);
+
+            if (Owner == null) yield break;
 
             Transform camTransform = Owner.PositionRig.GetCameraTransform();
             Vector3 origin = camTransform.position;

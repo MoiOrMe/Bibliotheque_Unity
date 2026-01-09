@@ -94,6 +94,11 @@ namespace MyLib.Modules.Common.Data
         public AudioClip FireSound;
         #endregion
 
+        #region Visual Effects
+        [Header("Animation")]
+        public AnimatorOverrideController AnimatorOverride;
+        #endregion
+
         // TODO : Ajouter les courbes de dégâts selon la distance (Damage Falloff)
         // TODO : Ajouter le temps d'équipement (Equip Time)
     }

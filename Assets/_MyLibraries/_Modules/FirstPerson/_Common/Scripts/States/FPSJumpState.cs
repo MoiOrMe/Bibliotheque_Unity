@@ -20,6 +20,7 @@ namespace MyLib.Modules.FirstPerson.States
         {
             // Appel de l'impulsion sur le composant Mover
             _fpsController.Mover.ApplyJumpImpulse();
+            _fpsController.Visuals.TriggerJump();
 
             _stateMachine.ChangeState(_fpsController.AirState);
         }

@@ -44,8 +44,20 @@ namespace MyLib.Core.Input
         public Vector2 LookInput { get; private set; }
         public bool IsFiring { get; private set; }
         public bool IsSprinting { get; private set; }
-        public bool IsCrouching { get; private set; }
         public bool IsMouseInput { get; private set; }
+
+        private bool _internalIsCrouching;
+        public bool IsCrouching
+        {
+            get
+            {
+                if (Application.isEditor)
+                {
+                    return Keyboard.current != null && Keyboard.current.cKey.isPressed;
+                }
+                return _internalIsCrouching;
+            }
+        }
         #endregion
 
         private GameControls _gameControls;
@@ -124,12 +136,12 @@ namespace MyLib.Core.Input
         {
             if (context.phase == InputActionPhase.Performed)
             {
-                IsCrouching = true;
+                _internalIsCrouching = true;
                 CrouchEvent?.Invoke();
             }
             else if (context.phase == InputActionPhase.Canceled)
             {
-                IsCrouching = false;
+                _internalIsCrouching = false;
                 CrouchCanceledEvent?.Invoke();
             }
         }

@@ -20,6 +20,7 @@ namespace MyLib.Modules.FirstPerson.Common
         // Composants découplés
         public FPSMover Mover { get; private set; }
         public FPSCameraRig CameraRig { get; private set; }
+        public FPSAnimator Visuals { get; private set; }
         #endregion
 
         #region Speed Settings
@@ -59,9 +60,11 @@ namespace MyLib.Modules.FirstPerson.Common
 
             Mover = GetComponent<FPSMover>();
             CameraRig = GetComponent<FPSCameraRig>();
+            Visuals = GetComponent<FPSAnimator>();
 
             Mover.Initialize();
             CameraRig.Initialize();
+            Visuals.Initialize(this);
         }
 
         /* Résumé de la méthode :
@@ -120,6 +123,7 @@ namespace MyLib.Modules.FirstPerson.Common
             // Délégation aux composants
             Mover.HandleHeightTransition(isCrouching);
             CameraRig.UpdateCameraHeight(isCrouching);
+            Visuals.HandleAnimationUpdate();
         }
     }
 }

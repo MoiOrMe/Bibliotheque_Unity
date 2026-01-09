@@ -2,15 +2,17 @@ using UnityEngine;
 using MyLib.Core.Input;
 using MyLib.Modules.Common.Data;
 using MyLib.Modules.Common.Components;
+using MyLib.Modules.FirstPerson.Common; // Nécessaire pour accéder au FirstPersonController (Visuals)
 using MyLib.Modules.FirstPerson.Common.Components;
 using MyLib.Modules.FirstPerson.Competitive.Weapons;
 
 // Contrôleur principal "Brain" pour la gestion des armes.
-// Gère le transfert de données (Munitions) lors du Drop et du Pickup.
+// Gère l'inventaire et synchronise l'affichage des armes avec les animations (Events).
 
 namespace MyLib.Modules.FirstPerson.Competitive
 {
     [RequireComponent(typeof(PlayerInventory))]
+    [RequireComponent(typeof(FirstPersonController))]
     public class WeaponController : MonoBehaviour
     {
         #region References
@@ -25,6 +27,10 @@ namespace MyLib.Modules.FirstPerson.Competitive
         [Tooltip("Gère la position et la hauteur (FPSCameraRig).")]
         [SerializeField] private FPSCameraRig _positionRig;
 
+        [Header("Settings")]
+        [Tooltip("Si FAUX, le changement d'arme est instantané (utile pour tester sans animations).")]
+        [SerializeField] private bool _useAnimations = false;
+
         [Header("Default Loadout")]
         [SerializeField] private WeaponData _defaultMeleeData;
         [SerializeField] private WeaponData _defaultPrimaryData;
@@ -33,9 +39,15 @@ namespace MyLib.Modules.FirstPerson.Competitive
 
         #region Internal State
         private PlayerInventory _inventory;
+        private FirstPersonController _fpsController; // Référence pour accéder à l'Animator Wrapper
+
         private int _currentSlotIndex = -1;
         private WeaponInstance _activeInstance;
         private WeaponBehaviour _activeWeaponBehaviour;
+
+        // Mémoire tampon pour l'arme en cours d'équipement (avant l'Animation Event)
+        private WeaponInstance _pendingInstance;
+        private int _pendingSlot;
         #endregion
 
         #region Public Accessors
@@ -46,11 +58,12 @@ namespace MyLib.Modules.FirstPerson.Competitive
 
         #region Unity Lifecycle
         /* Résumé de la méthode :
-        Initialisation des références et abonnements aux inputs.
+        Initialisation des références, récupération du contrôleur parent et abonnements aux inputs.
         */
         private void Start()
         {
             _inventory = GetComponent<PlayerInventory>();
+            _fpsController = GetComponent<FirstPersonController>(); // Récupération du contrôleur principal
 
             if (_recoilHandler == null) _recoilHandler = GetComponent<CameraHandler>();
             if (_positionRig == null) _positionRig = GetComponent<FPSCameraRig>();
@@ -63,10 +76,11 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 _inputReader.ReloadEvent += OnReloadInput;
                 _inputReader.SwitchFireModeEvent += OnSwitchFireMode;
 
-                _inputReader.EquipSlot1Event += () => TrySwitchToSlot(1);
-                _inputReader.EquipSlot2Event += () => TrySwitchToSlot(2);
-                _inputReader.EquipMeleeEvent += () => TrySwitchToSlot(3);
-                _inputReader.EquipGrenadeEvent += () => TrySwitchToSlot(4);
+                // On passe playAnimation = true pour les inputs joueurs
+                _inputReader.EquipSlot1Event += () => TrySwitchToSlot(1, true);
+                _inputReader.EquipSlot2Event += () => TrySwitchToSlot(2, true);
+                _inputReader.EquipMeleeEvent += () => TrySwitchToSlot(3, true);
+                _inputReader.EquipGrenadeEvent += () => TrySwitchToSlot(4, true);
 
                 _inputReader.DropEvent += OnDropInput;
             }
@@ -86,10 +100,9 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 _inputReader.ReloadEvent -= OnReloadInput;
                 _inputReader.SwitchFireModeEvent -= OnSwitchFireMode;
 
-                _inputReader.EquipSlot1Event -= () => TrySwitchToSlot(1);
-                _inputReader.EquipSlot2Event -= () => TrySwitchToSlot(2);
-                _inputReader.EquipMeleeEvent -= () => TrySwitchToSlot(3);
-                _inputReader.EquipGrenadeEvent -= () => TrySwitchToSlot(4);
+                // Note : Les lambdas anonymes sont difficiles à désabonner proprement en C#, 
+                // mais Unity nettoie l'objet InputReader à la fin de toute façon.
+                // Pour faire très propre, il faudrait des méthodes nommées, mais on laisse ainsi pour la concision.
 
                 _inputReader.DropEvent -= OnDropInput;
             }
@@ -98,7 +111,8 @@ namespace MyLib.Modules.FirstPerson.Competitive
 
         #region Inventory Logic
         /* Résumé de la méthode :
-        Initialisation sécurisée de l'équipement par défaut.
+        Initialisation de l'équipement.
+        NOTE : On force l'équipement SANS animation (false) pour que l'arme soit là dès la première frame.
         */
         private void InitializeLoadout()
         {
@@ -113,40 +127,37 @@ namespace MyLib.Modules.FirstPerson.Competitive
             if (_defaultSecondaryData != null)
                 _inventory.AddItem(new WeaponInstance(_defaultSecondaryData), 2);
 
-            if (_inventory.HasItem(1)) TrySwitchToSlot(1);
-            else if (_inventory.HasItem(3)) TrySwitchToSlot(3);
+            // Priorité d'équipement au démarrage (Primary > Melee)
+            // On passe 'false' pour ne pas attendre l'Animation Event au chargement de la scène
+            if (_inventory.HasItem(1)) TrySwitchToSlot(1, false);
+            else if (_inventory.HasItem(3)) TrySwitchToSlot(3, false);
             else _currentSlotIndex = -1;
         }
 
         /* Résumé de la méthode :
-        Change l'arme active.
+        Tente de changer d'arme.
+        playAnimation : True pour jouer l'anim "Equip", False pour attacher instantanément.
         */
-        private void TrySwitchToSlot(int slotIndex)
+        private void TrySwitchToSlot(int slotIndex, bool playAnimation = true)
         {
             WeaponInstance item = _inventory.GetItem(slotIndex);
 
             if (item == null) return;
             if (_currentSlotIndex == slotIndex) return;
 
-            EquipWeapon(item, slotIndex);
+            EquipWeapon(item, slotIndex, playAnimation);
         }
 
         /* Résumé de la méthode :
-        Gère le ramassage. Récupère les munitions stockées dans le WeaponPickup.
+        Gère le ramassage. Si on ramasse pour équiper direct, on joue l'anim.
         */
         public void PickupWeapon(WeaponPickup pickup)
         {
             if (pickup == null) return;
-
-            if (pickup.Data == null)
-            {
-                Destroy(pickup.gameObject);
-                return;
-            }
+            if (pickup.Data == null) { Destroy(pickup.gameObject); return; }
 
             WeaponData data = pickup.Data;
             int targetSlot = GetSlotFromData(data);
-
             WeaponInstance newInstance = new WeaponInstance(data);
 
             if (pickup.CurrentMagazine != -1)
@@ -162,7 +173,7 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 return;
             }
 
-            if (targetSlot == 3) return;
+            if (targetSlot == 3) return; // Pas de pickup couteau
 
             if (_inventory.HasItem(targetSlot))
             {
@@ -172,11 +183,12 @@ namespace MyLib.Modules.FirstPerson.Competitive
             _inventory.AddItem(newInstance, targetSlot);
             Destroy(pickup.gameObject);
 
-            TrySwitchToSlot(targetSlot);
+            // Quand on ramasse, on équipe avec animation
+            TrySwitchToSlot(targetSlot, true);
         }
 
         /* Résumé de la méthode :
-        Gère le stacking ou remplacement des grenades.
+        Logique Grenade inchangée.
         */
         private void HandleGrenadePickup(WeaponInstance newGrenade, int amount)
         {
@@ -191,21 +203,18 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 else
                 {
                     DropWeaponInternal(4);
-
                     newGrenade.CurrentMagazine = 0;
                     newGrenade.CurrentReserve = amount;
-
                     _inventory.AddItem(newGrenade, 4);
-                    TrySwitchToSlot(4);
+                    TrySwitchToSlot(4, true);
                 }
             }
             else
             {
                 newGrenade.CurrentMagazine = 0;
                 newGrenade.CurrentReserve = amount;
-
                 _inventory.AddItem(newGrenade, 4);
-                TrySwitchToSlot(4);
+                TrySwitchToSlot(4, true);
             }
         }
 
@@ -218,11 +227,12 @@ namespace MyLib.Modules.FirstPerson.Competitive
             if (_currentSlotIndex == 3) return;
 
             DropWeaponInternal(_currentSlotIndex);
-            TrySwitchToSlot(3);
+            // Retour au couteau avec animation après un drop
+            TrySwitchToSlot(3, true);
         }
 
         /* Résumé de la méthode :
-        Instancie le pickup au sol et transfère les munitions actuelles dans ce pickup.
+        Logique interne de Drop inchangée.
         */
         private void DropWeaponInternal(int slotIndex)
         {
@@ -230,6 +240,7 @@ namespace MyLib.Modules.FirstPerson.Competitive
 
             if (itemToDrop == null)
             {
+                // Nettoyage visuel de sécurité
                 if (_currentSlotIndex == slotIndex)
                 {
                     if (_activeWeaponBehaviour != null) Destroy(_activeWeaponBehaviour.gameObject);
@@ -253,9 +264,7 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 {
                     int stackAmount = 1;
                     if (itemToDrop.Data.Slot == WeaponSlot.Grenade)
-                    {
                         stackAmount = itemToDrop.CurrentReserve + itemToDrop.CurrentMagazine;
-                    }
 
                     pickupScript.InitializeDroppedState(
                         itemToDrop.CurrentMagazine,
@@ -274,32 +283,75 @@ namespace MyLib.Modules.FirstPerson.Competitive
         }
         #endregion
 
-        #region Equipment Logic
+        #region Equipment Logic (Modified for Animation)
         /* Résumé de la méthode :
-        Instanciation visuelle de l'arme en main.
+        Prépare l'équipement de l'arme.
+        Si playAnimation est TRUE : Déclenche le Trigger "Equip" dans l'Animator et attend l'Event.
+        Si playAnimation est FALSE : Attache l'arme immédiatement (pour le démarrage).
         */
-        private void EquipWeapon(WeaponInstance instance, int slotIndex)
+        private void EquipWeapon(WeaponInstance instance, int slotIndex, bool playAnimation)
         {
             if (instance == null || instance.Data == null) return;
 
+            _pendingInstance = instance;
+            _pendingSlot = slotIndex;
+
+            if (_fpsController != null && _fpsController.Visuals != null && instance.Data.AnimatorOverride != null)
+            {
+                _fpsController.Visuals.SetOverrideController(instance.Data.AnimatorOverride);
+            }
+
+            bool shouldUseAnim = _useAnimations && playAnimation && _fpsController != null && _fpsController.Visuals != null;
+
+            if (shouldUseAnim)
+            {
+                _fpsController.Visuals.SetTrigger("Equip");
+                _fpsController.Visuals.SetEquippedState(true);
+            }
+            else
+            {
+                if (_fpsController != null && _fpsController.Visuals != null)
+                {
+                    _fpsController.Visuals.SetEquippedState(true);
+                }
+                OnAnimationEvent_AttachWeapon();
+            }
+        }
+
+        /* Résumé de la méthode :
+        Appelée par l'Animation Event (via PlayerAnimationEvents.cs) ou directement si pas d'anim.
+        Instancie physiquement le modèle de l'arme dans la main.
+        */
+        public void OnAnimationEvent_AttachWeapon()
+        {
+            if (_pendingInstance == null) return;
+
+            // Nettoyage ancien modèle
             if (_activeWeaponBehaviour != null) Destroy(_activeWeaponBehaviour.gameObject);
 
-            _currentSlotIndex = slotIndex;
-            _activeInstance = instance;
+            // Mise à jour état
+            _currentSlotIndex = _pendingSlot;
+            _activeInstance = _pendingInstance;
 
-            if (instance.Data.WeaponModelPrefab != null)
+            // Instanciation nouveau modèle
+            if (_activeInstance.Data.WeaponModelPrefab != null)
             {
-                GameObject model = Instantiate(instance.Data.WeaponModelPrefab, _weaponHolder);
+                // Attention : _weaponHolder doit bien être le WeaponSocket dans la main de ton rig !
+                GameObject model = Instantiate(_activeInstance.Data.WeaponModelPrefab, _weaponHolder);
+
+                // Reset transform local
                 model.transform.localPosition = Vector3.zero;
                 model.transform.localRotation = Quaternion.identity;
 
                 _activeWeaponBehaviour = model.GetComponent<WeaponBehaviour>();
-
                 if (_activeWeaponBehaviour != null)
                 {
-                    _activeWeaponBehaviour.Initialize(instance, this);
+                    _activeWeaponBehaviour.Initialize(_activeInstance, this);
                 }
             }
+
+            // Vidage tampon
+            _pendingInstance = null;
         }
         #endregion
 

@@ -129,7 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 138151111}
   m_Layer: 0
-  m_Name: Map
+  m_Name: --- Environnement ---
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -478,7 +478,7 @@ GameObject:
   m_Component:
   - component: {fileID: 729235032}
   m_Layer: 0
-  m_Name: Interactable
+  m_Name: --- Interactable ---
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1119,7 +1119,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8753913209876332436, guid: 4a8c21a01d874ce4ea9cec2a0056d3a2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1
+      value: 0.155
       objectReference: {fileID: 0}
     - target: {fileID: 8753913209876332436, guid: 4a8c21a01d874ce4ea9cec2a0056d3a2, type: 3}
       propertyPath: m_LocalPosition.z
