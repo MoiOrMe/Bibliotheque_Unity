@@ -236,7 +236,7 @@ MonoBehaviour:
     m_WorldUpType: 0
     m_WorldUpObject: {fileID: 0}
     m_WorldUpAxis: 2
-    m_MaintainOffset: 0
+    m_MaintainOffset: 1
     m_ConstrainedAxes:
       x: 1
       y: 1
@@ -322,7 +322,7 @@ MonoBehaviour:
     m_WorldUpType: 0
     m_WorldUpObject: {fileID: 0}
     m_WorldUpAxis: 2
-    m_MaintainOffset: 0
+    m_MaintainOffset: 1
     m_ConstrainedAxes:
       x: 1
       y: 1
@@ -1325,6 +1325,10 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1802901727132330678, guid: 4a8c21a01d874ce4ea9cec2a0056d3a2, type: 3}
       propertyPath: m_Weight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1802901727132330678, guid: 4a8c21a01d874ce4ea9cec2a0056d3a2, type: 3}
+      propertyPath: m_Data.m_MaintainOffset
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1802901727132330678, guid: 4a8c21a01d874ce4ea9cec2a0056d3a2, type: 3}
