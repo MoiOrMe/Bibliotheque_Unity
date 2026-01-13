@@ -5,7 +5,8 @@
         "MyLib.Core",
         "Unity.InputSystem",
         "Unity.TextMeshPro",
-        "MyLib.Common"
+        "MyLib.Common",
+        "Unity.Animation.Rigging"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

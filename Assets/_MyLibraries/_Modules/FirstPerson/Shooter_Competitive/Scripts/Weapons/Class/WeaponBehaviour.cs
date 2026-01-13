@@ -5,7 +5,7 @@ using MyLib.Modules.FirstPerson.Common.Components;
 using MyLib.Modules.FirstPerson.Competitive.Weapons.States;
 
 // Composant MonoBehaviour attaché au PREFAB de l'arme (Visuel).
-// Contient la StateMachine propre à l'arme et expose les méthodes de contrôle pour le WeaponController.
+// Contient la StateMachine propre à l'arme, expose les méthodes de contrôle et les points d'ancrage (IK).
 
 namespace MyLib.Modules.FirstPerson.Competitive.Weapons
 {
@@ -17,6 +17,10 @@ namespace MyLib.Modules.FirstPerson.Competitive.Weapons
         [Tooltip("Point de sortie du tir (Muzzle Flash).")]
         [SerializeField] protected Transform _muzzlePoint;
         [SerializeField] protected WeaponData _data;
+
+        [Header("IK Settings")]
+        [Tooltip("Transform cible pour la main gauche (Animation Rigging). Laisser vide pour les armes à une main.")]
+        [SerializeField] private Transform _leftHandSocket;
         #endregion
 
         #region Internal References
@@ -29,6 +33,11 @@ namespace MyLib.Modules.FirstPerson.Competitive.Weapons
         public WeaponFiringState FiringState { get; private set; }
         public WeaponReloadState ReloadState { get; private set; }
         public WeaponEquipState EquipState { get; private set; }
+        #endregion
+
+        #region Public Accessors
+        // Accesseur utilisé par le WeaponController pour l'IK
+        public Transform LeftHandSocket => _leftHandSocket;
         #endregion
 
         #region Control Flags

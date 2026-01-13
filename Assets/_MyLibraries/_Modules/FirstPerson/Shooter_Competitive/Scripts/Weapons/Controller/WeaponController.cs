@@ -2,7 +2,7 @@ using UnityEngine;
 using MyLib.Core.Input;
 using MyLib.Modules.Common.Data;
 using MyLib.Modules.Common.Components;
-using MyLib.Modules.FirstPerson.Common; // Nécessaire pour accéder au FirstPersonController (Visuals)
+using MyLib.Modules.FirstPerson.Common;
 using MyLib.Modules.FirstPerson.Common.Components;
 using MyLib.Modules.FirstPerson.Competitive.Weapons;
 
@@ -26,6 +26,8 @@ namespace MyLib.Modules.FirstPerson.Competitive
         [SerializeField] private CameraHandler _recoilHandler;
         [Tooltip("Gère la position et la hauteur (FPSCameraRig).")]
         [SerializeField] private FPSCameraRig _positionRig;
+        [Tooltip("Gère l'inclinaison du buste (FPSRigging).")]
+        [SerializeField] private FPSRigging _rigging;
 
         [Header("Settings")]
         [Tooltip("Si FAUX, le changement d'arme est instantané (utile pour tester sans animations).")]
@@ -39,7 +41,7 @@ namespace MyLib.Modules.FirstPerson.Competitive
 
         #region Internal State
         private PlayerInventory _inventory;
-        private FirstPersonController _fpsController; // Référence pour accéder à l'Animator Wrapper
+        private FirstPersonController _fpsController;
 
         private int _currentSlotIndex = -1;
         private WeaponInstance _activeInstance;
@@ -336,7 +338,7 @@ namespace MyLib.Modules.FirstPerson.Competitive
             // Instanciation nouveau modèle
             if (_activeInstance.Data.WeaponModelPrefab != null)
             {
-                // Attention : _weaponHolder doit bien être le WeaponSocket dans la main de ton rig !
+                // _weaponHolder doit bien être le WeaponSocket dans la main de ton rig !
                 GameObject model = Instantiate(_activeInstance.Data.WeaponModelPrefab, _weaponHolder);
 
                 // Reset transform local
@@ -347,6 +349,13 @@ namespace MyLib.Modules.FirstPerson.Competitive
                 if (_activeWeaponBehaviour != null)
                 {
                     _activeWeaponBehaviour.Initialize(_activeInstance, this);
+
+                    // On dit au système de Rigging : "Voici le point d'accroche pour la main gauche sur cette arme"
+                    if (_rigging != null)
+                    {
+                        // Note : Assure-toi que "LeftHandSocket" est bien accessible dans WeaponBehaviour (voir point 3 ci-dessous)
+                        _rigging.SetWeaponIK(_activeWeaponBehaviour.LeftHandSocket, null);
+                    }
                 }
             }
 
