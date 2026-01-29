@@ -354,7 +354,10 @@ namespace MyLib.Modules.FirstPerson.Competitive
                     if (_rigging != null)
                     {
                         // Note : Assure-toi que "LeftHandSocket" est bien accessible dans WeaponBehaviour (voir point 3 ci-dessous)
-                        _rigging.SetWeaponIK(_activeWeaponBehaviour.LeftHandSocket, null);
+                        _rigging.SetWeaponIK(
+                            _activeWeaponBehaviour.LeftHandSocket,
+                            _activeWeaponBehaviour.RightHandSocket
+                        );
                     }
                 }
             }

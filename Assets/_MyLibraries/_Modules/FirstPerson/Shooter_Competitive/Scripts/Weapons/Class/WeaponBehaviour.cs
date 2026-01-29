@@ -19,8 +19,10 @@ namespace MyLib.Modules.FirstPerson.Competitive.Weapons
         [SerializeField] protected WeaponData _data;
 
         [Header("IK Settings")]
-        [Tooltip("Transform cible pour la main gauche (Animation Rigging). Laisser vide pour les armes à une main.")]
+        [Tooltip("Transform cible pour la main gauche. Laisser vide pour les armes à une main.")]
         [SerializeField] private Transform _leftHandSocket;
+        [Tooltip("Transform cible pour la main droite (La poignée).")]
+        [SerializeField] private Transform _rightHandSocket;
         #endregion
 
         #region Internal References
@@ -38,6 +40,7 @@ namespace MyLib.Modules.FirstPerson.Competitive.Weapons
         #region Public Accessors
         // Accesseur utilisé par le WeaponController pour l'IK
         public Transform LeftHandSocket => _leftHandSocket;
+        public Transform RightHandSocket => _rightHandSocket;
         #endregion
 
         #region Control Flags

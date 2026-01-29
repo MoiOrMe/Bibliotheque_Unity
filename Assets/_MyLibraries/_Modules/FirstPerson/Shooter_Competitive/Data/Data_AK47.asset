@@ -17,7 +17,7 @@ MonoBehaviour:
   WeaponModelPrefab: {fileID: 3369678978475763032, guid: 14910a42ae76c8549be23b9b4682746d, type: 3}
   PickupPrefab: {fileID: 8087625859196381679, guid: cf6f6b3f2eebe5f468c68700c39c80b1, type: 3}
   ShootType: 0
-  BaseDamage: 30
+  Damage: 30
   AvailableFireModes: 00000000
   BurstCount: 3
   FireRate: 600
@@ -340,3 +340,4 @@ MonoBehaviour:
   RecoilReturnSpeed: 5
   RecoilResetTime: 0.3
   FireSound: {fileID: 0}
+  AnimatorOverride: {fileID: 22100000, guid: b3b50289a3fdcf241b9e71e0a91db031, type: 2}

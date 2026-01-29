@@ -9,6 +9,7 @@ namespace MyLib.Modules.FirstPerson.Common.Components
         [Header("References")]
         [SerializeField] private FirstPersonController _controller;
         [SerializeField] private Rig _mainRig;
+        [SerializeField] private Animator _animator;
 
         [Header("Aiming (Spine)")]
         [SerializeField] private Transform _aimTarget;
@@ -54,35 +55,52 @@ namespace MyLib.Modules.FirstPerson.Common.Components
         // Gestion unifiée des deux mains
         private void UpdateIKWeights()
         {
+            // On récupère le poids depuis l'Animator (Courbe "IKWeight")
+            // Par défaut à 1 (collé) si le paramètre n'existe pas
+            float animatorWeight = 1f;
+
+            // Vérification : Assure-toi que FPSAnimator expose "Animator" en public (Property)
+            // Si _controller.Visuals.Animator ne marche pas, utilise _animator direct si tu l'as lié dans l'inspecteur
+            if (_controller != null && _controller.Visuals != null)
+            {
+                animatorWeight = _controller.Visuals.Animator.GetFloat("IKWeight");
+            }
+
             // --- MAIN GAUCHE ---
             if (_leftHandConstraint != null && _leftHandIKTarget != null)
             {
                 if (_targetLH != null)
                 {
-                    _weightLH = 1f;
+                    // CORRECTION ICI : On multiplie par le poids de l'animator
+                    _weightLH = 1f * animatorWeight;
+
                     _leftHandIKTarget.position = Vector3.Lerp(_leftHandIKTarget.position, _targetLH.position, Time.deltaTime * 20f);
                     _leftHandIKTarget.rotation = Quaternion.Slerp(_leftHandIKTarget.rotation, _targetLH.rotation, Time.deltaTime * 20f);
                 }
                 else
                 {
-                    _weightLH = 0f; // Pas de cible = Pas d'IK (Animation libre)
+                    _weightLH = 0f;
                 }
+
                 _leftHandConstraint.weight = Mathf.Lerp(_leftHandConstraint.weight, _weightLH, Time.deltaTime * _ikLerpSpeed);
             }
 
-            // --- MAIN DROITE (Nouveau) ---
+            // --- MAIN DROITE ---
             if (_rightHandConstraint != null && _rightHandIKTarget != null)
             {
                 if (_targetRH != null)
                 {
-                    _weightRH = 1f;
+                    // CORRECTION ICI : On multiplie par le poids de l'animator
+                    _weightRH = 1f * animatorWeight;
+
                     _rightHandIKTarget.position = Vector3.Lerp(_rightHandIKTarget.position, _targetRH.position, Time.deltaTime * 20f);
                     _rightHandIKTarget.rotation = Quaternion.Slerp(_rightHandIKTarget.rotation, _targetRH.rotation, Time.deltaTime * 20f);
                 }
                 else
                 {
-                    _weightRH = 0f; // C'est ici que le couteau est libéré !
+                    _weightRH = 0f;
                 }
+
                 _rightHandConstraint.weight = Mathf.Lerp(_rightHandConstraint.weight, _weightRH, Time.deltaTime * _ikLerpSpeed);
             }
         }

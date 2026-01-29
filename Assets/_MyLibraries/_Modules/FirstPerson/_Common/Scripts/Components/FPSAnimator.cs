@@ -27,6 +27,8 @@ namespace MyLib.Modules.FirstPerson.Common.Components
         private int _isEquippedHash;
         #endregion
 
+        public Animator Animator => _animator;
+
         /* Résumé de la méthode :
         Initialisation des références et des Hash IDs.
         */
