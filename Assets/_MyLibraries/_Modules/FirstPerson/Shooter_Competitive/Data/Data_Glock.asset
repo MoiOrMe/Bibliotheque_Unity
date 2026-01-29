@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd07d32240dbd24f93a912b4f31cf82, type: 3}
+  m_Name: Data_Glock
+  m_EditorClassIdentifier: 
+  WeaponName: Glock
+  Slot: 1
+  WeaponModelPrefab: {fileID: 4070391644096091527, guid: e24b88caf0d865c418da8f93ae5e01e5, type: 3}
+  PickupPrefab: {fileID: 1566805893683961752, guid: 4fc29c68144c42044a888a5b3ec48977, type: 3}
+  ShootType: 0
+  BaseDamage: 45
+  AvailableFireModes: 0100000002000000
+  BurstCount: 3
+  FireRate: 1000
+  Range: 1000
+  MagazineSize: 8
+  MaxAmmoReserve: 40
+  ReloadTime: 2.5
+  BaseSpread: 0
+  MovementSpread: 10
+  VerticalRecoilCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.02192542
+      value: 0.016764015
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1.0068831
+      value: 19.69855
+      inSlope: 0.29758692
+      outSlope: 0.29758692
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 2.9913359
+      value: 19.922726
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  HorizontalRecoilCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 7.9975038
+      value: 0.22082193
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  RecoilSnappiness: 20
+  RecoilReturnSpeed: 5
+  RecoilResetTime: 1.2
+  FireSound: {fileID: 0}

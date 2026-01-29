@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd07d32240dbd24f93a912b4f31cf82, type: 3}
+  m_Name: Data_Knife
+  m_EditorClassIdentifier: 
+  WeaponName: Couteau
+  Slot: 2
+  WeaponModelPrefab: {fileID: 5616911595306793133, guid: 7e56908178e51284db4887fd70c1860d, type: 3}
+  PickupPrefab: {fileID: 0}
+  ShootType: 0
+  Damage: 50
+  AvailableFireModes: 01000000
+  BurstCount: 0
+  FireRate: 60
+  Range: 2
+  MagazineSize: 9999
+  MaxAmmoReserve: 90
+  ReloadTime: 0
+  BaseSpread: 0
+  MovementSpread: 0
+  VerticalRecoilCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  HorizontalRecoilCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  RecoilSnappiness: 0
+  RecoilReturnSpeed: 0
+  RecoilResetTime: 0
+  FireSound: {fileID: 0}
+  AnimatorOverride: {fileID: 22100000, guid: 66ced761c8d72b040afffcfcb63386c2, type: 2}

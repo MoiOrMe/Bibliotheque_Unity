@@ -4,7 +4,8 @@
     "references": [
         "MyLib.Core",
         "Unity.InputSystem",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "MyLib.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

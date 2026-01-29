@@ -3,7 +3,8 @@
     "rootNamespace": "MyLib.AR",
     "references": [
         "MyLib.Core",
-        "Unity.XR.ARFoundation"
+        "Unity.XR.ARFoundation",
+        "MyLib.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

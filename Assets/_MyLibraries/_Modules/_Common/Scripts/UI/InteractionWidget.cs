@@ -1,6 +1,6 @@
 using UnityEngine;
 using TMPro;
-using MyLib.Core.BaseClasses; // Pour accéder à BaseMenu ou simplement MonoBehaviour
+using MyLib.Core.Interfaces;
 
 // Composant UI gérant l'affichage de l'invite d'interaction (ex: "Appuyez sur [E] pour Ouvrir").
 // Ce widget est destiné à être contrôlé par le contrôleur du joueur lorsqu'il détecte un objet interactif.
@@ -24,17 +24,20 @@ namespace MyLib.Modules.Common.UI
             Hide(); // Masqué par défaut.
         }
 
-        // Affiche le widget avec un message spécifique.
-        // interactable : L'objet détecté, utilisé pour récupérer son texte personnalisé.
+        /* Résumé de la méthode :
+        Affiche le widget avec le texte de l'objet ciblé.
+        */
         public void Show(IInteractable interactable)
         {
             if (interactable == null) return;
 
-            _promptText.text = interactable.GetInteractionPrompt(); // Ex: "Ouvrir Coffre"
+            _promptText.text = interactable.GetInteractionPrompt();
             _canvasGroup.alpha = 1f;
         }
 
-        // Masque le widget immédiatement.
+        /* Résumé de la méthode :
+        Masque le widget.
+        */
         public void Hide()
         {
             _canvasGroup.alpha = 0f;

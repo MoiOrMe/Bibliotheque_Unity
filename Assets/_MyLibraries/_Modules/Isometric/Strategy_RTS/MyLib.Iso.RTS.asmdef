@@ -3,7 +3,8 @@
     "rootNamespace": "MyLib.Iso.RTS",
     "references": [
         "MyLib.Core",
-        "MyLib.Isometric"
+        "MyLib.Isometric",
+        "MyLib.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

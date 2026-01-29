@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd07d32240dbd24f93a912b4f31cf82, type: 3}
+  m_Name: Data_FragGrenade
+  m_EditorClassIdentifier: 
+  WeaponName: Frag Grenade
+  Slot: 3
+  WeaponModelPrefab: {fileID: 2142265043605360292, guid: 25455081f5b8bee439ad360aac63dc44, type: 3}
+  PickupPrefab: {fileID: 8111123061613260836, guid: 8d53cc870c8976748934352586bc0ad2, type: 3}
+  ShootType: 1
+  BaseDamage: 30
+  AvailableFireModes: 01000000
+  BurstCount: 3
+  FireRate: 600
+  Range: 100
+  MagazineSize: 0
+  MaxAmmoReserve: 2
+  ReloadTime: 2.5
+  BaseSpread: 0
+  MovementSpread: 2
+  VerticalRecoilCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  HorizontalRecoilCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  RecoilSnappiness: 10
+  RecoilReturnSpeed: 5
+  RecoilResetTime: 0.3
+  FireSound: {fileID: 0}

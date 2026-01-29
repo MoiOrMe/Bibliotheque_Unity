@@ -3,7 +3,8 @@
     "rootNamespace": "MyLib.Side.Precision",
     "references": [
         "MyLib.Core",
-        "MyLib.SideView"
+        "MyLib.SideView",
+        "MyLib.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
