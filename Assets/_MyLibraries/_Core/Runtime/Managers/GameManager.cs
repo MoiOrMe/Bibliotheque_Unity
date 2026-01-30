@@ -1,8 +1,9 @@
+using MyLib.Core.BaseClasses;
+using MyLib.Core.Events; // Pour les événements globaux
+using MyLib.Core.Input; // Nécessaire pour écouter les inputs de pause
 using UnityEngine;
 using UnityEngine.Events;
-using MyLib.Core.BaseClasses;
-using MyLib.Core.Input; // Nécessaire pour écouter les inputs de pause
-using MyLib.Core.Events; // Pour les événements globaux
+using UnityEngine.SceneManagement;
 
 // Singleton persistant gérant l'état global du jeu (Pré-jeu, En cours, Pause, Victoire, Défaite).
 // Coordonne les transitions d'état, gère le timeScale (pause temporelle) et réagit aux entrées
@@ -20,33 +21,35 @@ namespace MyLib.Core.Managers
         Lost        // Condition de défaite atteinte
     }
 
-    public class GameManager : PersistentSingleton<GameManager>
+    /// <summary>
+	/// Singleton central gérant l'état du jeu et synchronisant les Inputs.
+	/// </summary>
+	public class GameManager : PersistentSingleton<GameManager>
     {
+        #region Internal State
         [Header("Dependencies")]
-        [Tooltip("Référence vers le ScriptableObject gérant les inputs.")]
         [SerializeField] private InputReader _inputReader;
 
-        // État actuel du jeu, accessible en lecture seule pour les autres scripts.
         public GameState CurrentState { get; private set; } = GameState.PreGame;
-
-        // Événement déclenché lors d'un changement d'état (pour l'UI ou l'Audio).
         public UnityAction<GameState> OnGameStateChanged;
 
-        // Initialisation et abonnement aux événements.
+        // Permet de savoir si la scène active est une scène de jeu ou de menu
+        private bool _isGameplayScene = false;
+        #endregion
+
+        #region Unity Life Cycle
         private void Start()
         {
             if (_inputReader != null)
             {
-                // S'abonne à l'événement de pause défini dans l'InputReader.
                 _inputReader.PauseEvent += HandlePauseToggle;
                 _inputReader.ResumeEvent += HandlePauseToggle;
             }
 
-            // Initialisation de l'état par défaut (peut être modifié selon la scène de démarrage).
-            SetGameState(GameState.PreGame);
+            // Abonnement au chargement de scène pour réinitialiser l'état proprement
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
-        // Nettoyage des événements lors de la destruction.
         private void OnDestroy()
         {
             if (_inputReader != null)
@@ -54,68 +57,106 @@ namespace MyLib.Core.Managers
                 _inputReader.PauseEvent -= HandlePauseToggle;
                 _inputReader.ResumeEvent -= HandlePauseToggle;
             }
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+        #endregion
+
+        #region Public Methods
+        /// <summary>
+        /// Définit explicitement l'état du jeu et met à jour les inputs.
+        /// </summary>
+        public void SetGameState(GameState newState)
+        {
+            if (CurrentState == newState) return;
+
+            CurrentState = newState;
+            _UpdateInputState();
+            _UpdateTimeScale();
+
+            OnGameStateChanged?.Invoke(newState);
+            Debug.Log($"[GameManager] New State: {newState}");
         }
 
-        // Démarre le gameplay (appelé par le SceneLoader ou un bouton Start).
+        /// <summary>
+        /// Appelé par le SceneLoader ou un bouton pour lancer la session de jeu.
+        /// </summary>
         public void StartGame()
         {
+            _isGameplayScene = true;
             SetGameState(GameState.Running);
         }
 
-        // Bascule entre l'état Running et Paused.
-        private void HandlePauseToggle()
+        public void ReturnToMenu()
         {
-            if (CurrentState == GameState.Running)
-            {
-                SetGameState(GameState.Paused);
-            }
-            else if (CurrentState == GameState.Paused)
-            {
-                SetGameState(GameState.Running);
-            }
+            _isGameplayScene = false;
+            SetGameState(GameState.PreGame);
+            SceneLoader.Instance.LoadMainMenu();
         }
 
-        // Change l'état du jeu et exécute la logique associée (TimeScale, Curseurs, Events).
-        public void SetGameState(GameState newState)
-        {
-            CurrentState = newState;
-
-            switch (newState)
-            {
-                case GameState.Running:
-                    Time.timeScale = 1f; // Reprend le temps normal.
-                    // Optionnel : Verrouiller le curseur ici si c'est un FPS.
-                    break;
-
-                case GameState.Paused:
-                    Time.timeScale = 0f; // Arrête le temps physique.
-                    break;
-
-                case GameState.Won:
-                    Time.timeScale = 1f; // On laisse souvent le temps pour les animations de fin.
-                    Debug.Log("Game Won!");
-                    break;
-
-                case GameState.Lost:
-                    Time.timeScale = 1f;
-                    Debug.Log("Game Lost!");
-                    break;
-            }
-
-            // Notifie tous les systèmes abonnés que l'état a changé.
-            OnGameStateChanged?.Invoke(newState);
-        }
-
-        // Permet de quitter l'application proprement.
         public void QuitGame()
         {
-            GlobalEvents.OnApplicationQuit?.Invoke(); // Déclenche l'événement global de nettoyage.
-
+            GlobalEvents.OnApplicationQuit?.Invoke();
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
-                Application.Quit();
+			Application.Quit();
 #endif
         }
+        #endregion
+
+        #region Private Logic
+        /// <summary>
+        /// Logique centralisée pour basculer les Inputs en fonction de l'état.
+        /// </summary>
+        private void _UpdateInputState()
+        {
+            if (_inputReader == null) return;
+
+            switch (CurrentState)
+            {
+                case GameState.Running:
+                    // En jeu pur -> Gameplay Inputs
+                    _inputReader.EnableGameplayInput();
+                    break;
+
+                case GameState.PreGame:
+                case GameState.Paused:
+                case GameState.Won:
+                case GameState.Lost:
+                    // Tout ce qui n'est pas du jeu pur -> UI Inputs
+                    _inputReader.EnableUIInput();
+                    break;
+            }
+        }
+
+        private void _UpdateTimeScale()
+        {
+            Time.timeScale = (CurrentState == GameState.Paused) ? 0f : 1f;
+        }
+
+        private void HandlePauseToggle()
+        {
+            // On ne peut pauser que si on est dans une scène de gameplay
+            if (!_isGameplayScene) return;
+
+            if (CurrentState == GameState.Running) SetGameState(GameState.Paused);
+            else if (CurrentState == GameState.Paused) SetGameState(GameState.Running);
+        }
+
+        /// <summary>
+        /// Réinitialise l'état à chaque changement de scène pour éviter les blocages.
+        /// </summary>
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // Si on revient au Menu Principal, on force le mode PreGame (UI)
+            if (scene.name == "MainMenu" || scene.name == "ModuleSelector")
+            {
+                _isGameplayScene = false;
+                SetGameState(GameState.PreGame);
+            }
+        }
+        #endregion
+
+        //TODO : Vérifier si des états supplémentaires sont nécessaires pour les cinématiques.
     }
 }

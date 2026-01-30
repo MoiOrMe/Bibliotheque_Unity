@@ -1,51 +1,83 @@
 using UnityEngine;
 using UnityEngine.UI;
-using MyLib.Core.BaseClasses; // Pour hériter de BaseMenu
-using MyLib.Core.Managers;    // Pour accéder au GameManager et UIManager
-
-// Classe concrète gérant le Menu de Pause.
-// Hérite de BaseMenu pour la gestion d'ouverture/fermeture (CanvasGroup).
-// Gère les clics sur les boutons "Reprendre" et "Quitter" en communiquant avec les Managers.
+using MyLib.Core.BaseClasses;
+using MyLib.Core.Managers;
 
 namespace MyLib.Core.UI.Menus
 {
+    /// <summary>
+    /// Classe concrète gérant le Menu de Pause et la reprise du jeu.
+    /// </summary>
     public class PauseMenu : BaseMenu
     {
-        [Header("Pause Buttons")]
-        [Tooltip("Le bouton pour reprendre la partie.")]
+        #region Internal State
+        [Header("Navigation Buttons")]
         [SerializeField] private Button _resumeButton;
-
-        [Tooltip("Le bouton pour quitter le jeu.")]
+        [SerializeField] private Button _settingsButton;
+        [SerializeField] private Button _mainMenuButton;
         [SerializeField] private Button _quitButton;
+        #endregion
 
-        // Initialisation des listeners sur les boutons.
-        // On utilise Start pour être sûr que les boutons sont chargés.
+        #region Unity Life Cycle
+        /// <summary>
+        /// Initialisation des listeners.
+        /// </summary>
         private void Start()
         {
-            if (_resumeButton != null)
-            {
-                _resumeButton.onClick.AddListener(OnResumeClicked);
-            }
-
-            if (_quitButton != null)
-            {
-                _quitButton.onClick.AddListener(OnQuitClicked);
-            }
+            if (_resumeButton != null) _resumeButton.onClick.AddListener(OnResumeClicked);
+            if (_settingsButton != null) _settingsButton.onClick.AddListener(OnSettingsClicked);
+            if (_mainMenuButton != null) _mainMenuButton.onClick.AddListener(OnMainMenuClicked);
+            if (_quitButton != null) _quitButton.onClick.AddListener(OnQuitClicked);
         }
+        #endregion
 
-        // Méthode appelée quand on clique sur Reprendre.
+        #region Public Methods
+        /// <summary>
+        /// Ferme le menu et restaure automatiquement le gameplay via l'UIManager.
+        /// </summary>
         public void OnResumeClicked()
         {
-            // Demande à l'UIManager de fermer ce menu.
-            // Cela réactivera automatiquement les inputs du jeu (Gameplay).
-            UIManager.Instance.CloseCurrentMenu();
+            if (UIManager.Instance != null) UIManager.Instance.CloseCurrentMenu();
         }
 
-        // Méthode appelée quand on clique sur Quitter.
-        public void OnQuitClicked()
+        /// <summary>
+        /// Ouvre le menu des paramètres via l'UIManager.
+        /// </summary>
+        public void OnSettingsClicked()
         {
-            // Appelle la méthode de fermeture propre du GameManager.
-            GameManager.Instance.QuitGame();
+            if (UIManager.Instance != null) UIManager.Instance.OpenMenu<SettingsMenu>();
         }
+
+        /// <summary>
+		/// Demande confirmation avant de retourner au menu principal.
+		/// </summary>
+		public void OnMainMenuClicked()
+        {
+            UIManager.Instance.ShowConfirmation(
+                "Retourner au menu principal ?\nLa progression non sauvegardée sera perdue.",
+                () =>
+                {
+                    if (UIManager.Instance != null) UIManager.Instance.CloseAllMenus();
+                    if (GameManager.Instance != null) GameManager.Instance.ReturnToMenu();
+                }
+            );
+        }
+
+        /// <summary>
+		/// Demande confirmation avant de quitter le jeu.
+		/// </summary>
+		public void OnQuitClicked()
+        {
+            UIManager.Instance.ShowConfirmation(
+                "Voulez-vous vraiment quitter le jeu ?",
+                () =>
+                {
+                    if (GameManager.Instance != null) GameManager.Instance.QuitGame();
+                }
+            );
+        }
+        #endregion
+
+        //TODO : Ajouter un bouton pour retourner au menu principal avec confirmation.
     }
 }

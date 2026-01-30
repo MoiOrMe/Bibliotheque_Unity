@@ -35,7 +35,7 @@ TagManager:
   - 
   - 
   - 
-  - 
+  - ObjectiveTarget
   - NoRender
   m_SortingLayers:
   - name: Default

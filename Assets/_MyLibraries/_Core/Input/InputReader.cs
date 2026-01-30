@@ -2,15 +2,18 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
 
-// Couche d'abstraction (Wrapper) pour le New Input System d'Unity.
-// Transforme les callbacks complexes en événements C# simples et stocke les valeurs continues (Move/Look).
-
 namespace MyLib.Core.Input
 {
+    /// <summary>
+    /// Couche d'abstraction (Wrapper) pour le New Input System d'Unity.
+    /// Transforme les callbacks en événements C# et stocke les valeurs continues.
+    /// </summary>
     [CreateAssetMenu(menuName = "MyLib/Input/Input Reader", fileName = "InputReader")]
     public class InputReader : ScriptableObject, GameControls.IGameplayActions, GameControls.IUIActions
     {
-        #region Gameplay Events
+        #region Internal State
+        private GameControls _gameControls;
+
         public event UnityAction<Vector2> MoveEvent;
         public event UnityAction<Vector2> LookEvent;
         public event UnityAction JumpEvent;
@@ -25,21 +28,16 @@ namespace MyLib.Core.Input
         public event UnityAction ReloadEvent;
         public event UnityAction SwitchFireModeEvent;
 
-        // Inventaire
         public event UnityAction EquipSlot1Event;
         public event UnityAction EquipSlot2Event;
         public event UnityAction EquipMeleeEvent;
         public event UnityAction EquipGrenadeEvent;
         public event UnityAction SwitchWeaponEvent;
         public event UnityAction DropEvent;
-        #endregion
 
-        #region UI Events
         public event UnityAction ResumeEvent;
         public event UnityAction PauseEvent;
-        #endregion
 
-        #region State Properties
         public Vector2 MovementInput { get; private set; }
         public Vector2 LookInput { get; private set; }
         public bool IsFiring { get; private set; }
@@ -60,8 +58,10 @@ namespace MyLib.Core.Input
         }
         #endregion
 
-        private GameControls _gameControls;
-
+        #region Unity Life Cycle
+        /// <summary>
+        /// Initialise les contrôles et les callbacks
+        /// </summary>
         private void OnEnable()
         {
             if (_gameControls == null)
@@ -70,36 +70,58 @@ namespace MyLib.Core.Input
                 _gameControls.Gameplay.SetCallbacks(this);
                 _gameControls.UI.SetCallbacks(this);
             }
-            EnableGameplayInput();
         }
 
+        /// <summary>
+        /// Désactive tous les contrôles
+        /// </summary>
         private void OnDisable()
         {
             DisableAllInput();
         }
+        #endregion
 
-        public void EnableGameplayInput()
-        {
-            _gameControls.UI.Disable();
-            _gameControls.Gameplay.Enable();
-        }
+        #region Public Methods
+        /// <summary>
+		/// Active la map de gameplay et verrouille le curseur
+		/// </summary>
+		public void EnableGameplayInput()
+		{
+			_gameControls.UI.Disable();
+			_gameControls.Gameplay.Enable();
 
-        public void EnableUIInput()
-        {
-            _gameControls.Gameplay.Disable();
-            _gameControls.UI.Enable();
-        }
+			Cursor.lockState = CursorLockMode.Locked;
+			Cursor.visible = false;
+		}
 
-        public void DisableAllInput()
-        {
-            _gameControls.Gameplay.Disable();
-            _gameControls.UI.Disable();
-        }
+		/// <summary>
+		/// Active la map d'UI et libère le curseur
+		/// </summary>
+		public void EnableUIInput()
+		{
+			_gameControls.Gameplay.Disable();
+			_gameControls.UI.Enable();
+
+			Cursor.lockState = CursorLockMode.None;
+			Cursor.visible = true;
+		}
+
+		/// <summary>
+		/// Désactive tout
+		/// </summary>
+		public void DisableAllInput()
+		{
+			if (_gameControls == null) return;
+			_gameControls.Gameplay.Disable();
+			_gameControls.UI.Disable();
+			_gameControls.Disable();
+		}
+        #endregion
 
         #region Gameplay Callbacks
-        /* Résumé de la méthode :
-        Stocke le vecteur de mouvement pour le polling.
-        */
+        /// <summary>
+        /// Callback mouvement
+        /// </summary>
         public void OnMove(InputAction.CallbackContext context)
         {
             Vector2 value = context.ReadValue<Vector2>();
@@ -107,9 +129,9 @@ namespace MyLib.Core.Input
             MoveEvent?.Invoke(value);
         }
 
-        /* Résumé de la méthode :
-        Stocke le vecteur de regard et détecte le type de périphérique (Souris/Gamepad).
-        */
+        /// <summary>
+        /// Callback regard
+        /// </summary>
         public void OnLook(InputAction.CallbackContext context)
         {
             Vector2 value = context.ReadValue<Vector2>();
@@ -216,7 +238,6 @@ namespace MyLib.Core.Input
             if (context.phase == InputActionPhase.Performed)
             {
                 PauseEvent?.Invoke();
-                EnableUIInput();
             }
         }
         #endregion
@@ -227,7 +248,6 @@ namespace MyLib.Core.Input
             if (context.phase == InputActionPhase.Performed)
             {
                 ResumeEvent?.Invoke();
-                EnableGameplayInput();
             }
         }
 
