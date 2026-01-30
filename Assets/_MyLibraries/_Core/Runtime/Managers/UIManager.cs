@@ -1,126 +1,151 @@
-using UnityEngine;
+using MyLib.Core.BaseClasses;
+using MyLib.Core.Input;
+using MyLib.Core.UI.Menus;
+using MyLib.Core.UI.Systems;
 using System.Collections.Generic;
-using MyLib.Core.BaseClasses; // Pour Singleton et BaseMenu
-using MyLib.Core.Input;       // Pour gérer le changement de Map (Gameplay/UI)
-
-// Singleton gérant la navigation et l'affichage des menus dans l'interface utilisateur.
-// Utilise un système de pile (Stack) pour mémoriser l'historique des fenêtres ouvertes,
-// permettant une navigation "Retour" fluide. Gère aussi le basculement des Inputs (Mode UI vs Gameplay).
+using UnityEngine;
+using UnityEngine.Events;
 
 namespace MyLib.Core.Managers
 {
+    /// <summary>
+    /// Gère la pile de menus et demande au GameManager de passer en Pause/Jeu.
+    /// </summary>
     public class UIManager : Singleton<UIManager>
     {
-        [Header("Dependencies")]
-        [Tooltip("Référence au lecteur d'input pour basculer les contrôles.")]
-        [SerializeField] private InputReader _inputReader;
-
+        #region Internal State
         [Header("References")]
-        [Tooltip("Liste de tous les menus disponibles dans la scène (à assigner ou trouver auto).")]
         [SerializeField] private List<BaseMenu> _allMenus = new List<BaseMenu>();
+        [SerializeField] private InputReader _inputReader; // Juste pour l'écoute du bouton Pause
 
-        // Pile mémorisant l'ordre d'ouverture des menus pour gérer le bouton Retour.
         private Stack<BaseMenu> _menuStack = new Stack<BaseMenu>();
+        #endregion
 
-        // Initialisation. Récupère automatiquement les menus si la liste est vide.
+        #region Unity Life Cycle
         protected override void Awake()
         {
-            base.Awake(); // Initialisation du Singleton.
-
-            // Si la liste n'est pas remplie manuellement, cherche tous les BaseMenu dans les enfants.
-            if (_allMenus.Count == 0)
-            {
-                // GetComponentsInChildren inclut le parent, true permet de chercher même les objets désactivés.
-                _allMenus.AddRange(GetComponentsInChildren<BaseMenu>(true));
-            }
+            base.Awake();
+            if (_allMenus.Count == 0) _allMenus.AddRange(GetComponentsInChildren<BaseMenu>(true));
         }
 
-        // Ouvre un menu spécifique en passant son type (ex: OpenMenu<PauseMenu>()).
-        // Masque le menu précédent s'il y en a un et empile le nouveau.
+        private void OnEnable()
+        {
+            if (GameManager.Instance != null) GameManager.Instance.OnGameStateChanged += _OnGameStateChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (GameManager.Instance != null) GameManager.Instance.OnGameStateChanged -= _OnGameStateChanged;
+        }
+        #endregion
+
+        #region Public Methods
         public void OpenMenu<T>() where T : BaseMenu
         {
-            // Recherche le menu du type demandé dans la liste référencée.
-            BaseMenu menuToOpen = _allMenus.Find(m => m is T);
-
-            if (menuToOpen != null)
-            {
-                OpenMenu(menuToOpen);
-            }
-            else
-            {
-                Debug.LogWarning($"UIManager: Impossible de trouver le menu de type {typeof(T)}.");
-            }
+            BaseMenu menu = _allMenus.Find(m => m is T);
+            if (menu != null) OpenMenu(menu);
         }
 
-        // Méthode interne gérant la logique d'ouverture et de mise à jour de la pile.
-        // Change l'Input Map en mode UI si c'est le premier menu ouvert.
         public void OpenMenu(BaseMenu menu)
         {
-            // Si un menu est déjà ouvert, on le désactive visuellement (ou on le laisse en background selon le design).
-            if (_menuStack.Count > 0)
+            // Si c'est le premier menu qu'on ouvre en plein jeu, on met en pause
+            if (_menuStack.Count == 0 && GameManager.Instance.CurrentState == GameState.Running)
             {
-                BaseMenu currentMenu = _menuStack.Peek();
-                currentMenu.Close(); // Ferme le menu actuel avant d'ouvrir le suivant.
+                GameManager.Instance.SetGameState(GameState.Paused);
             }
 
-            // Ajoute le nouveau menu sur le haut de la pile.
+            if (_menuStack.Count > 0) _menuStack.Peek().Close();
+
             _menuStack.Push(menu);
             menu.Open();
-
-            // Si c'est le premier menu qui s'ouvre, on passe les contrôles en mode Interface.
-            if (_menuStack.Count == 1 && _inputReader != null)
-            {
-                _inputReader.EnableUIInput();
-            }
         }
 
-        // Ferme le menu actuellement actif (celui en haut de la pile).
-        // Réouvre le menu précédent s'il existe, sinon repasse en mode Gameplay.
         public void CloseCurrentMenu()
         {
             if (_menuStack.Count == 0) return;
 
-            // Retire et ferme le menu actif.
             BaseMenu topMenu = _menuStack.Pop();
             topMenu.Close();
 
-            // Vérifie s'il reste des menus dans l'historique.
             if (_menuStack.Count > 0)
             {
-                // Réouvre le menu précédent.
-                BaseMenu nextMenu = _menuStack.Peek();
-                nextMenu.Open();
+                // On réouvre le menu précédent
+                _menuStack.Peek().Open();
             }
             else
             {
-                // Si plus aucun menu n'est ouvert, on rend le contrôle au joueur.
-                if (_inputReader != null)
-                {
-                    _inputReader.EnableGameplayInput();
-                }
-
-                // Notifie le GameManager de repasser en mode Running si nécessaire.
-                if (GameManager.Instance != null)
+                // Plus aucun menu => On reprend le jeu SI on était en pause
+                if (GameManager.Instance.CurrentState == GameState.Paused)
                 {
                     GameManager.Instance.SetGameState(GameState.Running);
                 }
             }
         }
 
-        // Ferme tous les menus ouverts d'un coup.
-        // Utile lors d'un chargement de niveau ou d'un retour au menu principal.
         public void CloseAllMenus()
         {
-            while (_menuStack.Count > 0)
-            {
-                BaseMenu menu = _menuStack.Pop();
-                menu.Close();
-            }
+            while (_menuStack.Count > 0) _menuStack.Pop().Close();
+        }
+        #endregion
 
-            if (_inputReader != null)
+        #region Private Logic
+        /// <summary>
+		/// Réagit aux changements d'état globaux.
+		/// </summary>
+		private void _OnGameStateChanged(GameState newState)
+        {
+            switch (newState)
             {
-                _inputReader.EnableGameplayInput();
+                case GameState.PreGame:
+                    // Nettoyage complet uniquement quand on retourne au menu principal
+                    CloseAllMenus();
+                    break;
+
+                case GameState.Paused:
+                    // On n'ouvre le menu pause que si rien n'est déjà ouvert
+                    if (_menuStack.Count == 0) OpenMenu<PauseMenu>();
+                    break;
+
+                case GameState.Running:
+                    // Si le jeu reprend mais qu'il reste des menus, on les ferme
+                    if (_menuStack.Count > 0) CloseAllMenus();
+                    break;
             }
         }
+
+        /// <summary>
+		/// Trouve le popup de confirmation et l'affiche avec les actions demandées.
+		/// </summary>
+		/// <param name="message">La question à poser.</param>
+		/// <param name="onConfirm">Action si OUI.</param>
+		/// <param name="onCancel">Action si NON (optionnel).</param>
+		public void ShowConfirmation(string message, UnityAction onConfirm, UnityAction onCancel = null)
+        {
+            // On cherche le popup spécifique dans la liste des menus connus
+            ConfirmationPopup popup = _allMenus.Find(m => m is ConfirmationPopup) as ConfirmationPopup;
+
+            if (popup != null)
+            {
+                // On l'ajoute à la pile pour gérer la navigation (fermeture via Echap, etc.)
+                _menuStack.Push(popup);
+
+                // On l'ouvre avec sa méthode spécifique qui configure le texte et les boutons
+                popup.OpenPopup(message, () =>
+                {
+                    // Action encapsulée pour retirer le popup de la pile avant l'action réelle
+                    _menuStack.Pop();
+                    onConfirm?.Invoke();
+                },
+                () =>
+                {
+                    // Action encapsulée pour le bouton Annuler
+                    _menuStack.Pop();
+                    onCancel?.Invoke();
+                });
+            }
+        }
+        #endregion
+
+        //TODO : Ajouter une méthode pour gérer la superposition de menus sans fermeture (mode overlay).
     }
 }
