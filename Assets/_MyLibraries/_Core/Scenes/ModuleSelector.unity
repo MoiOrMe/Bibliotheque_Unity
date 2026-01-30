@@ -4477,6 +4477,10 @@ PrefabInstance:
       value: MyLib.Core.UI.Menus.ModuleSelectorController, MyLib.Core
       objectReference: {fileID: 0}
     - target: {fileID: 4362938145701637149, guid: 7b9ac3ed559439d4e970ee51005237e3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
+      value: Demo_VR_Action
+      objectReference: {fileID: 0}
+    - target: {fileID: 4362938145701637149, guid: 7b9ac3ed559439d4e970ee51005237e3, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
